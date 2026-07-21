@@ -1,0 +1,1363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>My Watch Collection</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0B3D2E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --verde:#0B3D2E;
+    --marfil:#F6F5F1;
+    --card:#FFFFFF;
+    --tinta:#17211C;
+    --gris:#78817C;
+    --gris-suave:#A9AFAA;
+    --linea:#ECEAE3;
+    --oro:#B98F4A;
+    --sube:#1E7A4E;
+    --baja:#B0432F;
+    --sombra:0 1px 2px rgba(23,33,28,.04), 0 8px 24px rgba(23,33,28,.06);
+    --radio:18px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    font-family:'Archivo',system-ui,sans-serif;
+    background:var(--marfil);color:var(--tinta);font-size:15px;
+    max-width:480px;margin:0 auto;min-height:100dvh;
+    display:flex;flex-direction:column;
+  }
+  button{font:inherit;border:none;background:none;cursor:pointer;color:inherit;text-align:left}
+  input,select,textarea{font:inherit}
+  svg{display:block}
+  .num-font{font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+
+  /* ================= Top bar ================= */
+  .topbar{
+    position:sticky;top:0;z-index:30;
+    background:var(--verde);color:#F4F1E8;
+    padding:calc(env(safe-area-inset-top,10px) + 12px) 20px 14px;
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .wordmark{font-size:16px;font-weight:800;letter-spacing:.01em}
+  .wordmark em{font-style:normal;color:var(--oro)}
+  .top-actions{display:flex;gap:8px}
+  .icon-btn{
+    width:36px;height:36px;border-radius:50%;
+    display:grid;place-items:center;
+    background:rgba(255,255,255,.10);
+    transition:background .15s ease;
+  }
+  .icon-btn.on{background:var(--oro);color:var(--verde)}
+
+  /* ================= Screens ================= */
+  main{flex:1;overflow-x:hidden}
+  .screen{display:none;padding:20px 20px calc(env(safe-area-inset-bottom,10px) + 96px)}
+  .screen.activa{display:block;animation:fade .18s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){.screen.activa{animation:none}}
+
+  .eyebrow{font-size:11.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--gris)}
+  h1.titulo{font-size:24px;font-weight:800;letter-spacing:-.02em;margin-top:4px}
+  .sub-titulo{font-size:17px;font-weight:700;letter-spacing:-.01em}
+  .fila-titulo{display:flex;align-items:baseline;justify-content:space-between;margin:26px 0 12px}
+  .link{font-size:13px;font-weight:600;color:var(--verde)}
+  .card{background:var(--card);border:1px solid var(--linea);border-radius:var(--radio);box-shadow:var(--sombra)}
+
+  /* ================= Today card ================= */
+  .cta-log{
+    border:1.5px dashed #CFCCC3;border-radius:var(--radio);background:#fff;
+    padding:18px;width:100%;margin-top:16px;
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    font-weight:600;transition:transform .12s ease;
+  }
+  .cta-log:active{transform:scale(.985)}
+  .hoy-card{margin-top:16px;overflow:hidden}
+  .hoy-head{display:flex;align-items:center;gap:6px;padding:14px 16px 4px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--sube)}
+  .wear-row{display:flex;align-items:center;gap:12px;padding:11px 16px}
+  .wear-row + .wear-row{border-top:1px solid var(--linea)}
+  .wear-row .nombre{font-weight:600;font-size:13.5px;flex:1;line-height:1.3}
+  .btn-x{width:30px;height:30px;border-radius:50%;flex:none;display:grid;place-items:center;color:var(--gris-suave)}
+  .btn-x:active{background:#F1EFE9;color:var(--baja)}
+  .hoy-add{
+    display:flex;align-items:center;justify-content:center;gap:7px;
+    width:100%;padding:12px;border-top:1px solid var(--linea);
+    font-size:13px;font-weight:700;color:var(--verde);
+  }
+
+  /* ================= Calendar (collapsible) ================= */
+  .cal-card{margin-top:14px;padding:14px 16px}
+  .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+  .cal-head .mes{font-size:15px;font-weight:700}
+  .cal-nav{display:flex;gap:6px;align-items:center}
+  .cal-nav button{width:30px;height:30px;border-radius:10px;border:1px solid var(--linea);display:grid;place-items:center;color:var(--gris)}
+  .cal-nav button:active{background:#F1EFE9}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+  .cal-dow{text-align:center;font-size:10px;font-weight:700;color:var(--gris-suave);text-transform:uppercase;letter-spacing:.05em;padding:2px 0 6px}
+  .cal-day{
+    aspect-ratio:1;border-radius:12px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;width:100%;text-align:center;
+  }
+  .cal-day:active{background:#F1EFE9}
+  .cal-day.hoy{background:var(--verde);color:#fff}
+  .cal-day.fuera{visibility:hidden}
+  .cal-day.futuro{color:#D3D6D2;pointer-events:none}
+  .mini-dots{display:flex;gap:2.5px;height:5px}
+  .mini-dots i{width:5px;height:5px;border-radius:50%;display:block}
+  .cal-toggle{
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    width:100%;padding:9px 0 2px;margin-top:4px;
+    font-size:12px;font-weight:700;color:var(--gris);
+  }
+  .cal-toggle svg{transition:transform .2s ease}
+  .cal-toggle.abierto svg{transform:rotate(180deg)}
+  .cal-resumen{margin-top:12px}
+
+  /* ================= Insight tiles ================= */
+  .tiles{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:14px}
+  .tile{padding:14px 12px 12px}
+  .tile .num{font-size:21px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+  .tile .lbl{font-size:11px;font-weight:600;color:var(--gris);margin-top:3px;line-height:1.3}
+  .tile .ico{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;background:#EFF3F0;color:var(--verde);margin-bottom:9px}
+
+  /* ================= Watch rows ================= */
+  .fila{display:flex;align-items:center;gap:13px;padding:13px 16px}
+  .fila + .fila{border-top:1px solid var(--linea)}
+  .rango{font-size:15px;font-weight:800;color:var(--verde);width:26px;flex:none;font-variant-numeric:tabular-nums}
+  .dial{flex:none;border-radius:13px;background:#F3F1EB;padding:6px;overflow:hidden}
+  .dial img{width:100%;height:100%;object-fit:cover;border-radius:8px}
+  .fila-info{flex:1;min-width:0}
+  .fila-info .nombre{font-weight:600;font-size:14px;line-height:1.3}
+  .fila-info .meta{font-size:12px;color:var(--gris);margin-top:3px;font-variant-numeric:tabular-nums}
+  .barra{height:3px;border-radius:2px;background:var(--linea);margin-top:8px;overflow:hidden}
+  .barra i{display:block;height:100%;background:var(--verde);border-radius:2px}
+  .pct{font-weight:700;font-size:15px;color:var(--verde);font-variant-numeric:tabular-nums;flex:none}
+  .chev{flex:none;color:var(--gris-suave)}
+  .vacio{padding:30px 12px;text-align:center;color:var(--gris);font-size:13.5px}
+  .vacio strong{display:block;font-size:15px;font-weight:700;color:var(--tinta);margin-bottom:5px}
+
+  /* ================= Segmented / chips ================= */
+  .seg{display:flex;background:#EBE9E2;border-radius:12px;padding:3px;margin-top:16px}
+  .seg button{flex:1;text-align:center;padding:8px 0;border-radius:10px;font-size:13.5px;font-weight:600;color:var(--gris);transition:all .15s ease}
+  .seg button.sel{background:#fff;color:var(--tinta);box-shadow:0 1px 3px rgba(23,33,28,.12)}
+  .chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 6px;margin-top:12px;scrollbar-width:none}
+  .chips::-webkit-scrollbar{display:none}
+  .chip{flex:none;padding:7px 14px;border-radius:999px;border:1px solid var(--linea);background:#fff;font-size:13px;font-weight:600;color:var(--gris)}
+  .chip.activa{background:var(--verde);border-color:var(--verde);color:#fff}
+  .resumen-filtro{font-size:12px;color:var(--gris);margin:6px 2px 12px;font-variant-numeric:tabular-nums}
+
+  /* ================= Occasion ================= */
+  .occ-card{padding:16px;margin-top:18px}
+  .occ-bar{display:flex;height:10px;border-radius:6px;overflow:hidden;margin:12px 0 14px}
+  .occ-bar i{display:block;height:100%}
+  .occ-leyenda{display:flex;flex-wrap:wrap;gap:10px 16px}
+  .occ-item{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--gris);font-variant-numeric:tabular-nums}
+  .occ-item .sw{width:9px;height:9px;border-radius:3px}
+  .c-Work{background:#3D6491}.c-Casual{background:#A79A7B}.c-LeisureTime{background:#4E9192}.c-Vacation{background:#3F9A6E}.c-Dinner{background:#C07A45}.c-Party{background:#7B5EA7}.c-Event{background:#B05A78}.c-Sport{background:#A84A3F}.c-Unspecified{background:#9AA09B}
+  .cat-tag{flex:none;font-size:10.5px;font-weight:700;letter-spacing:.04em;padding:4px 10px;border-radius:999px}
+  .cat-Work{background:#E8EEF7;color:#2C4E7A}
+  .cat-Casual{background:#EFEDE4;color:#6B6250}
+  .cat-LeisureTime{background:#E2EFEF;color:#2F6B6C}
+  .cat-Vacation{background:#E4F1E9;color:#1E7A4E}
+  .cat-Dinner{background:#F5E9E2;color:#A05A2C}
+  .cat-Party{background:#EDE7F3;color:#5B3E82}
+  .cat-Event{background:#F6E7EC;color:#8E3D5C}
+  .cat-Sport{background:#F6E6E3;color:#8F3A30}
+  .cat-Unspecified{background:#EEEFED;color:#6B7270}
+  .btn-edit{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:var(--verde);border:1px solid var(--linea);background:#fff;border-radius:999px;padding:7px 12px;flex:none}
+  .btn-edit:active{background:#F1EFE9}
+  .sold-badge{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;background:#F5E9E2;color:#A05A2C;padding:4px 10px;border-radius:999px;margin-top:7px}
+  .chkrow{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--linea);border-radius:12px;padding:12px 14px;margin-top:6px;font-weight:600;font-size:14px}
+  .chkrow input{width:18px;height:18px;accent-color:var(--verde)}
+  .add-hint{font-size:11.5px;font-weight:700;color:var(--oro)}
+
+  /* ================= History ================= */
+  .hist-fecha{font-size:11.5px;font-weight:700;color:var(--gris);text-transform:uppercase;letter-spacing:.07em;margin:16px 2px 8px}
+  .hist-item{display:flex;align-items:center;gap:12px;padding:11px 14px}
+  .hist-item + .hist-item{border-top:1px solid var(--linea)}
+  .hist-item .nombre{font-weight:600;font-size:13.5px;flex:1;line-height:1.3}
+
+  /* ================= Collection ================= */
+  .portfolio{padding:20px;margin-top:18px;position:relative;overflow:hidden;background:var(--verde);border:none;color:#F4F1E8}
+  .portfolio::after{content:"";position:absolute;right:-38px;top:-38px;width:150px;height:150px;border-radius:50%;border:26px solid rgba(255,255,255,.05)}
+  .portfolio .eyebrow{color:rgba(244,241,232,.65)}
+  .portfolio .num{font-size:32px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em;margin-top:6px;color:#fff}
+  .portfolio .num.oculto{letter-spacing:.1em;color:rgba(255,255,255,.75)}
+  .portfolio .meta{display:flex;gap:14px;margin-top:10px;font-size:12.5px;color:rgba(244,241,232,.8);font-weight:600;font-variant-numeric:tabular-nums}
+  .portfolio .meta b{color:#9FD8B8}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+  .wcard{padding:14px;display:flex;flex-direction:column;align-items:flex-start;gap:10px;width:100%;transition:transform .12s ease}
+  .wcard:active{transform:scale(.97)}
+  .wcard .nombre{font-weight:600;font-size:13px;line-height:1.35;min-height:35px}
+  .wcard .valor{font-size:16px;font-weight:700;font-variant-numeric:tabular-nums}
+  .wcard .sub{font-size:11.5px;font-weight:600;margin-top:1px}
+  .delta.pos{color:var(--sube)}
+  .delta.neg{color:var(--baja)}
+  .aviso-privacidad{display:flex;align-items:center;gap:8px;margin-top:14px;background:#fff;border:1px solid var(--linea);border-radius:14px;padding:11px 14px;font-size:12.5px;color:var(--gris)}
+
+  /* ================= Bottom nav ================= */
+  .navbar{
+    position:fixed;left:0;right:0;bottom:0;z-index:35;
+    max-width:480px;margin:0 auto;
+    background:rgba(255,255,255,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    border-top:1px solid var(--linea);display:flex;
+    padding:8px 6px calc(env(safe-area-inset-bottom,10px) + 8px);
+  }
+  .navbar button{
+    flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;
+    font-size:10px;font-weight:700;letter-spacing:.03em;color:var(--gris-suave);
+    padding:4px 0;transition:color .15s ease;
+  }
+  .navbar button.sel{color:var(--verde)}
+
+  /* ================= Sheet ================= */
+  .overlay{position:fixed;inset:0;background:rgba(15,25,20,.45);opacity:0;pointer-events:none;transition:opacity .2s ease;z-index:40}
+  .overlay.abierta{opacity:1;pointer-events:auto}
+  .sheet{
+    position:fixed;left:0;right:0;bottom:0;z-index:50;max-width:480px;margin:0 auto;
+    background:var(--marfil);border-radius:24px 24px 0 0;
+    padding:14px 20px calc(env(safe-area-inset-bottom,12px) + 20px);
+    transform:translateY(105%);transition:transform .25s cubic-bezier(.3,.9,.3,1);
+    box-shadow:0 -8px 40px rgba(0,0,0,.18);
+    max-height:90dvh;overflow-y:auto;
+  }
+  .sheet.abierta{transform:none}
+  .sheet .asa{width:40px;height:4px;border-radius:2px;background:#D8D5CD;margin:0 auto 16px}
+  .sheet h2{font-size:18px;font-weight:800;letter-spacing:-.01em;margin-bottom:4px}
+  .sheet .p{font-size:13px;color:var(--gris);margin-bottom:14px}
+  .sheet-item{display:flex;align-items:center;gap:12px;width:100%;padding:11px 12px;border-radius:14px;border:1px solid var(--linea);background:#fff;margin-bottom:9px}
+  .sheet-item:active{background:#F1EFE9}
+  .sheet-item .nombre{font-weight:600;font-size:13.5px;line-height:1.3}
+  .cat-grid{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:16px}
+  .cat-btn{padding:10px 16px;border-radius:999px;border:1px solid var(--linea);background:#fff;font-weight:600;font-size:14px}
+  .cat-btn.sel{background:var(--verde);border-color:var(--verde);color:#fff}
+  .sheet-confirm{width:100%;padding:15px;border-radius:14px;background:var(--verde);color:#fff;font-weight:700;font-size:15px;text-align:center}
+  .sheet-confirm:disabled{opacity:.35}
+  .sheet-back{font-size:13px;font-weight:600;color:var(--gris);margin-bottom:10px;display:block}
+  .form-seccion{font-size:15px;font-weight:800;letter-spacing:-.01em;margin:20px 2px 2px}
+  .lblf{font-size:12px;font-weight:700;color:var(--gris);margin:12px 2px 6px;display:block;letter-spacing:.03em}
+  .inp{width:100%;padding:12px 14px;border:1px solid var(--linea);border-radius:12px;background:#fff;outline:none;appearance:none;-webkit-appearance:none}
+  .inp:focus{border-color:var(--verde)}
+  .inp-row{display:flex;gap:10px}
+  .inp-row > div{flex:1;min-width:0}
+  textarea.inp{min-height:70px;resize:vertical}
+  select.inp{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2378817C' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");background-repeat:no-repeat;background-position:right 12px center;padding-right:34px}
+  .sw-grid{display:flex;gap:9px;flex-wrap:wrap}
+  .swb{width:34px;height:34px;border-radius:50%;border:2.5px solid #fff;box-shadow:0 0 0 1px var(--linea)}
+  .swb.sel{box-shadow:0 0 0 2.5px var(--verde)}
+  .foto-add{
+    display:flex;align-items:center;gap:8px;
+    border:1.5px dashed #CFCCC3;border-radius:12px;background:#fff;
+    padding:12px 14px;width:100%;font-size:13.5px;font-weight:600;color:var(--gris);
+  }
+  .foto-thumbs{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .foto-thumb{position:relative;width:64px;height:64px;border-radius:10px;overflow:hidden;border:1px solid var(--linea)}
+  .foto-thumb img{width:100%;height:100%;object-fit:cover}
+  .foto-thumb button{position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:50%;background:rgba(15,25,20,.6);color:#fff;display:grid;place-items:center}
+
+  /* ================= Detail: carousel ================= */
+  .carrusel{
+    display:flex;overflow-x:auto;scroll-snap-type:x mandatory;
+    border-radius:16px;background:#FFFFFF;border:1px solid var(--linea);
+    scrollbar-width:none;margin-bottom:8px;
+  }
+  .carrusel::-webkit-scrollbar{display:none}
+  .slide{flex:0 0 100%;scroll-snap-align:center;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:12px}
+  .slide img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;object-position:center center;display:block;margin:auto}
+  .dots{display:flex;gap:5px;justify-content:center;margin-bottom:14px}
+  .dots i{width:6px;height:6px;border-radius:50%;background:#D8D5CD;transition:background .15s}
+  .dots i.on{background:var(--verde)}
+
+  .det-nombre{font-size:18px;font-weight:800;letter-spacing:-.01em;line-height:1.25}
+  .det-ref{font-size:12.5px;color:var(--gris);margin-top:3px;font-variant-numeric:tabular-nums}
+
+  /* Value development */
+  .vd{background:#fff;border:1px solid var(--linea);border-radius:16px;padding:16px;margin-top:14px}
+  .vd-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .vd-precio{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+  .vd-badge{font-size:13px;font-weight:700;padding:5px 10px;border-radius:9px;color:#fff;font-variant-numeric:tabular-nums}
+  .vd-badge.pos{background:var(--sube)}
+  .vd-badge.neg{background:var(--baja)}
+  .vd-sub{font-size:13px;color:var(--gris);margin-top:5px;font-variant-numeric:tabular-nums}
+  .vd-sub b.pos{color:var(--sube)}
+  .vd-sub b.neg{color:var(--baja)}
+  .vd-titulo{font-size:14px;font-weight:800;margin:16px 0 8px}
+  .vd-eje{display:flex;justify-content:space-between;font-size:11px;color:var(--gris-suave);margin-top:6px;font-variant-numeric:tabular-nums}
+  .vd-lock{display:flex;align-items:center;gap:8px;padding:22px 0;justify-content:center;color:var(--gris);font-size:13px}
+
+  .det-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+  .det-stat{background:#fff;border:1px solid var(--linea);border-radius:14px;padding:12px 14px}
+  .det-stat .v{font-size:16px;font-weight:700;font-variant-numeric:tabular-nums}
+  .det-stat .l{font-size:11px;font-weight:600;color:var(--gris);margin-top:2px}
+
+  .det-lista{background:#fff;border:1px solid var(--linea);border-radius:14px;margin-top:14px}
+  .det-row{display:flex;justify-content:space-between;gap:14px;padding:12px 14px;font-size:13.5px}
+  .det-row + .det-row{border-top:1px solid var(--linea)}
+  .det-row .k{color:var(--gris);font-weight:600;flex:none}
+  .det-row .v{font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
+
+  /* Toast */
+  .toast{
+    position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,12px) + 84px);
+    transform:translateX(-50%) translateY(20px);
+    background:var(--verde);color:#fff;font-size:13.5px;font-weight:600;
+    padding:11px 18px;border-radius:999px;opacity:0;
+    transition:all .25s ease;z-index:60;white-space:nowrap;
+  }
+  .toast.visible{opacity:1;transform:translateX(-50%)}
+
+  button:focus-visible,.inp:focus-visible{outline:2px solid var(--oro);outline-offset:2px;border-radius:10px}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="wordmark">My Watch <em>Collection</em></div>
+  <div class="top-actions">
+    <button class="icon-btn" id="btnOjo" aria-label="Show or hide values" aria-pressed="false">
+      <svg id="ojoIcon" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></svg>
+    </button>
+    <button class="icon-btn" id="btnAdd" aria-label="Add watch">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+  </div>
+</div>
+
+<main>
+  <!-- ============ HOME ============ -->
+  <section class="screen activa" id="scr-home">
+    <div class="eyebrow" id="fechaHoy"></div>
+    <h1 class="titulo" id="saludo">Good morning, Christian</h1>
+
+    <div id="hoyCard"></div>
+
+    <div class="card cal-card">
+      <div class="cal-head">
+        <span class="mes" id="calMes"></span>
+        <span class="cal-nav" id="calNavBtns" hidden>
+          <button id="calPrev" aria-label="Previous month"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5-7 7 7 7"/></svg></button>
+          <button id="calNext" aria-label="Next month"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg></button>
+        </span>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+      <button class="cal-toggle" id="calToggle" aria-expanded="false">
+        <span id="calToggleLbl">Full month</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+    </div>
+    <div class="card cal-resumen" id="calResumen" hidden></div>
+
+    <div class="tiles" id="tiles"></div>
+
+    <div class="fila-titulo">
+      <span class="sub-titulo">Most worn · 30 days</span>
+      <button class="link" data-goto="stats">See all</button>
+    </div>
+    <div class="card" id="topHome"></div>
+  </section>
+
+  <!-- ============ STATS ============ -->
+  <section class="screen" id="scr-stats">
+    <div class="eyebrow">Statistics</div>
+    <h1 class="titulo">Wear analytics</h1>
+
+    <div class="seg" id="segVista">
+      <button class="sel" data-v="ranking">Ranking</button>
+      <button data-v="history">History</button>
+    </div>
+
+    <div id="vistaRanking">
+      <div class="seg" id="segFecha"></div>
+      <div class="chips" id="chipsCat" aria-label="Category"></div>
+      <div class="resumen-filtro" id="resumenFiltro"></div>
+      <div class="card" id="listaRanking"></div>
+      <div class="card occ-card" id="occCard"></div>
+    </div>
+
+    <div id="vistaHistory" hidden>
+      <div id="listaHistorial"></div>
+    </div>
+  </section>
+
+  <!-- ============ COLLECTION ============ -->
+  <section class="screen" id="scr-coleccion">
+    <div class="eyebrow">Collection</div>
+    <h1 class="titulo">Your pieces</h1>
+
+    <div class="card portfolio">
+      <div class="eyebrow">Market value · auto-updated daily</div>
+      <div class="num" id="valorTotal"></div>
+      <div class="meta" id="valorMeta"></div>
+    </div>
+    <div class="aviso-privacidad" id="avisoPrivacidad">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+      Values are hidden. Tap the eye icon to reveal.
+    </div>
+
+    <div class="grid" id="gridColeccion"></div>
+  </section>
+</main>
+
+<nav class="navbar" role="tablist">
+  <button class="sel" data-scr="home" role="tab">
+    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1Z"/></svg>
+    Home
+  </button>
+  <button data-scr="stats" role="tab">
+    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M5 20V13M12 20V6M19 20v-9"/></svg>
+    Stats
+  </button>
+  <button data-scr="coleccion" role="tab">
+    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="6"/><path d="M9.5 3.5 10 1.5h4l.5 2M9.5 20.5l.5 2h4l.5-2"/><path d="M12 9.5V12l1.8 1.3"/></svg>
+    Collection
+  </button>
+</nav>
+
+<div class="overlay" id="overlay"></div>
+<div class="sheet" id="sheet" role="dialog">
+  <div class="asa"></div>
+  <div id="sheetContenido"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================= Real data from Wristory export (2025-03-10 -> 2026-07-14) ================= */
+const HOY = new Date(); HOY.setHours(0,0,0,0);
+
+/* ==================== PRODUCTION CONFIG ====================
+   Pega aquí la URL /exec de tu Web App de Apps Script y el TOKEN
+   que definiste en Code.gs. Con ambos vacíos, la app corre en modo
+   demo con los datos embebidos (tu export de Wristory). */
+const CONFIG = {
+  API_URL: "",
+  TOKEN: "",
+};
+const ONLINE = () => !!(CONFIG.API_URL && CONFIG.TOKEN);
+const isoLocal = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+async function apiGet(params){
+  const u = new URL(CONFIG.API_URL);
+  Object.entries({token:CONFIG.TOKEN, ...params}).forEach(([k,v])=>u.searchParams.set(k,v));
+  const j = await (await fetch(u)).json();
+  if(j.error) throw new Error(j.error);
+  return j;
+}
+async function apiPost(body){
+  const j = await (await fetch(CONFIG.API_URL, {method:"POST", body: JSON.stringify({token:CONFIG.TOKEN, ...body})})).json();
+  if(j.error) throw new Error(j.error);
+  return j;
+}
+function apiTry(body){
+  if(!ONLINE()) return;
+  apiPost(body).catch(e=>toast("Sync error: "+e.message));
+}
+function serializaReloj(r){
+  return {
+    id:r.id, name:r.nombre, ref:r.ref, material:r.material, diameter_mm:r.diametro||"",
+    dial_color:r.dial, bezel_color:r.bisel, strap_color:r.correa,
+    purchase_price:r.compra||"", purchase_date:r.compra?isoLocal(r.compraFecha):"",
+    source:r.source, box_papers:r.boxpapers, condition:r.condicion,
+    serial:r.serial, notes:r.notas,
+    sold_price:r.vendido?(r.vendido.precio||""):"", sold_date:r.vendido?isoLocal(r.vendido.fecha):"",
+    photos:r.fotos.filter(f=>/^https?:/.test(f)).join("|"),
+  };
+}
+let nextWatchId = 100, nextWearId = 1;
+const nuevoUid = () => Date.now() + "-" + Math.random().toString(36).slice(2,7);
+const esc = s => String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+
+const RAW_WATCHES = [{"id": 1, "nombre": "Omega Seamaster Diver 300m Master Chronometer", "ref": "210.62.42.20.01.001", "material": "Steel & rose gold", "diametro": 42, "dial": "#141414", "bisel": "#B76E4E", "correa": "#1c1c1c", "compra": 12800, "target": 14350, "cfy": 2023, "cfm": 2, "source": "Authorized dealer", "boxpapers": "Original box & papers (full set)", "condicion": "Excellent"}, {"id": 2, "nombre": "Omega Seamaster Aqua Terra", "ref": "220.10.41.21.10.001", "material": "Steel", "diametro": 41, "dial": "#3E5C43", "bisel": "#C9CDCB", "correa": "#AEB4B0", "compra": 6400, "target": 7100, "cfy": 2022, "cfm": 10, "source": "Retail shop", "boxpapers": "Original box & papers (full set)", "condicion": "Excellent"}, {"id": 3, "nombre": "Omega Seamaster Diver 300m Gold On", "ref": "210.25.42.20.03.001", "material": "Steel & yellow gold", "diametro": 42, "dial": "#41573F", "bisel": "#B98F4A", "correa": "#9EA3A0", "compra": 9800, "target": 10200, "cfy": 2024, "cfm": 5, "source": "Chrono24", "boxpapers": "Original box & papers (full set)", "condicion": "Unworn"}, {"id": 4, "nombre": "Zenith Chronomaster Sport", "ref": "03.3100.3600/69.M3100", "material": "Steel", "diametro": 41, "dial": "#EFEDE6", "bisel": "#2B2B2B", "correa": "#C9CDCB", "compra": 10500, "target": 9850, "cfy": 2024, "cfm": 1, "source": "Authorized dealer", "boxpapers": "Original box & papers (full set)", "condicion": "Excellent"}, {"id": 5, "nombre": "Tudor Black Bay 58", "ref": "M79030B-0001", "material": "Steel", "diametro": 39, "dial": "#5C1F27", "bisel": "#4A171E", "correa": "#B7BCB9", "compra": 4200, "target": 4550, "cfy": 2021, "cfm": 7, "source": "Retail shop", "boxpapers": "Box only", "condicion": "Good"}, {"id": 6, "nombre": "IWC Petronas Formula One Team Performance Chronograph", "ref": "IW388306", "material": "Titanium", "diametro": 41, "dial": "#12352B", "bisel": "#0E2B23", "correa": "#3a3f3d", "compra": 7600, "target": 7400, "cfy": 2025, "cfm": 0, "source": "Chrono24", "boxpapers": "Original box & papers (full set)", "condicion": "Excellent"}, {"id": 7, "nombre": "Rolex Submariner Date", "ref": "", "material": "Steel", "diametro": 41, "dial": "#101010", "bisel": "#0E1A14", "correa": "#B7BCB9", "compra": 0, "target": 0, "cfy": 2025, "cfm": 2, "source": "", "boxpapers": "", "condicion": ""}, {"id": 8, "nombre": "Tudor Black Bay GMT", "ref": "", "material": "Steel", "diametro": 41, "dial": "#141414", "bisel": "#5C2333", "correa": "#B7BCB9", "compra": 0, "target": 0, "cfy": 2025, "cfm": 2, "source": "", "boxpapers": "", "condicion": ""}, {"id": 9, "nombre": "Bulgari BVLGARI BVLGARI Automatic Blue Dial 103133", "ref": "103133", "material": "Steel", "diametro": 41, "dial": "#1F3A5F", "bisel": "#B98F4A", "correa": "#2B2B2B", "compra": 0, "target": 0, "cfy": 2025, "cfm": 2, "source": "", "boxpapers": "", "condicion": ""}, {"id": 10, "nombre": "Christopher Ward Twelve", "ref": "", "material": "Steel", "diametro": 40, "dial": "#2E5F5C", "bisel": "#C9CDCB", "correa": "#AEB4B0", "compra": 0, "target": 0, "cfy": 2025, "cfm": 2, "source": "", "boxpapers": "", "condicion": ""}, {"id": 11, "nombre": "Swatch Moonswatch \"Mission To Saturn\" Swatch x Omega", "ref": "", "material": "Bioceramic", "diametro": 42, "dial": "#D8C9A6", "bisel": "#8A7B5C", "correa": "#C9BFA5", "compra": 0, "target": 0, "cfy": 2025, "cfm": 2, "source": "", "boxpapers": "", "condicion": ""}, {"id": 12, "nombre": "Cartier Drive De Cartier", "ref": "", "material": "Steel", "diametro": 40, "dial": "#E8E6DE", "bisel": "#C9CDCB", "correa": "#4A342A", "compra": 0, "target": 0, "cfy": 2025, "cfm": 2, "source": "", "boxpapers": "", "condicion": ""}, {"id": 13, "nombre": "Frederique Constant Worldtimer Watch Angel edition", "ref": "", "material": "Steel", "diametro": 42, "dial": "#24406B", "bisel": "#C9CDCB", "correa": "#3A2E26", "compra": 0, "target": 0, "cfy": 2025, "cfm": 10, "source": "", "boxpapers": "", "condicion": ""}, {"id": 14, "nombre": "Swatch Moonswatch \"Mission To Pluto\" Swatch x Omega", "ref": "", "material": "Bioceramic", "diametro": 42, "dial": "#B8B2AA", "bisel": "#8A4A45", "correa": "#A8A29A", "compra": 0, "target": 0, "cfy": 2025, "cfm": 3, "source": "", "boxpapers": "", "condicion": ""}, {"id": 15, "nombre": "Tissot T17.1.586.52 PRC200", "ref": "T17.1.586.52", "material": "Steel", "diametro": 40, "dial": "#141414", "bisel": "#C9CDCB", "correa": "#B7BCB9", "compra": 0, "target": 0, "cfy": 2025, "cfm": 2, "source": "", "boxpapers": "", "condicion": ""}, {"id": 16, "nombre": "Baltic", "ref": "", "material": "Steel", "diametro": 38, "dial": "#EDE6D6", "bisel": "#C9CDCB", "correa": "#4A342A", "compra": 0, "target": 0, "cfy": 2025, "cfm": 6, "source": "", "boxpapers": "", "condicion": ""}, {"id": 17, "nombre": "Raymond Weil Maestro", "ref": "", "material": "Steel", "diametro": 40, "dial": "#F2F0EA", "bisel": "#C9CDCB", "correa": "#2B2320", "compra": 0, "target": 0, "cfy": 2025, "cfm": 2, "source": "", "boxpapers": "", "condicion": ""}, {"id": 18, "nombre": "Baltany Historique Homage", "ref": "", "material": "Bronze", "diametro": 38, "dial": "#3A4A3E", "bisel": "#8A6B4A", "correa": "#4A342A", "compra": 0, "target": 0, "cfy": 2025, "cfm": 2, "source": "", "boxpapers": "", "condicion": ""}, {"id": 19, "nombre": "Apple Serie 9", "ref": "", "material": "Aluminum", "diametro": 45, "dial": "#141414", "bisel": "#2B2B2B", "correa": "#3a3f3d", "compra": 0, "target": 0, "cfy": 2025, "cfm": 7, "source": "", "boxpapers": "", "condicion": ""}];
+const RAW_WEARS = [["2025-03-10", 2, "Vacation"], ["2025-03-11", 2, "Unspecified"], ["2025-03-12", 10, "Unspecified"], ["2025-03-13", 9, "Unspecified"], ["2025-03-14", 8, "LeisureTime"], ["2025-03-15", 9, "LeisureTime"], ["2025-03-15", 15, "LeisureTime"], ["2025-03-16", 11, "LeisureTime"], ["2025-03-16", 4, "Party"], ["2025-03-17", 17, "Work"], ["2025-03-18", 7, "Work"], ["2025-03-19", 10, "Work"], ["2025-03-20", 2, "Work"], ["2025-03-22", 7, "Dinner"], ["2025-03-22", 8, "LeisureTime"], ["2025-03-23", 1, "LeisureTime"], ["2025-03-24", 8, "Work"], ["2025-03-25", 18, "Work"], ["2025-03-26", 12, "Work"], ["2025-03-27", 1, "Work"], ["2025-03-28", 7, "Work"], ["2025-03-29", 15, "LeisureTime"], ["2025-03-29", 10, "LeisureTime"], ["2025-03-29", 4, "Dinner"], ["2025-03-30", 8, "Vacation"], ["2025-03-31", 2, "Work"], ["2025-04-01", 4, "Work"], ["2025-04-02", 7, "Work"], ["2025-04-03", 2, "Work"], ["2025-04-04", 15, "LeisureTime"], ["2025-04-04", 1, "Unspecified"], ["2025-04-05", 1, "Vacation"], ["2025-04-05", 2, "Vacation"], ["2025-04-06", 1, "Vacation"], ["2025-04-07", 7, "Work"], ["2025-04-08", 17, "Work"], ["2025-04-09", 12, "Work"], ["2025-04-10", 10, "Work"], ["2025-04-11", 7, "Work"], ["2025-04-12", 11, "LeisureTime"], ["2025-04-12", 1, "LeisureTime"], ["2025-04-13", 1, "LeisureTime"], ["2025-04-13", 9, "Party"], ["2025-04-14", 1, "Vacation"], ["2025-04-15", 8, "Vacation"], ["2025-04-15", 9, "Dinner"], ["2025-04-16", 11, "LeisureTime"], ["2025-04-17", 11, "LeisureTime"], ["2025-04-18", 1, "Vacation"], ["2025-04-19", 1, "Vacation"], ["2025-04-20", 1, "LeisureTime"], ["2025-04-21", 4, "Work"], ["2025-04-22", 2, "Work"], ["2025-04-22", 14, "LeisureTime"], ["2025-04-23", 7, "Work"], ["2025-04-24", 2, "Work"], ["2025-04-25", 9, "Work"], ["2025-04-26", 1, "LeisureTime"], ["2025-04-27", 8, "LeisureTime"], ["2025-04-28", 2, "Work"], ["2025-04-29", 10, "Work"], ["2025-04-30", 4, "Work"], ["2025-05-01", 10, "Work"], ["2025-05-02", 9, "Unspecified"], ["2025-05-02", 2, "Work"], ["2025-05-03", 8, "LeisureTime"], ["2025-05-03", 2, "Unspecified"], ["2025-05-04", 8, "LeisureTime"], ["2025-05-05", 10, "Work"], ["2025-05-06", 7, "Work"], ["2025-05-07", 4, "Work"], ["2025-05-07", 14, "LeisureTime"], ["2025-05-08", 7, "Work"], ["2025-05-09", 14, "Unspecified"], ["2025-05-09", 7, "Dinner"], ["2025-05-10", 1, "LeisureTime"], ["2025-05-11", 9, "Unspecified"], ["2025-05-12", 7, "Unspecified"], ["2025-05-13", 7, "Unspecified"], ["2025-05-14", 11, "LeisureTime"], ["2025-05-15", 7, "Unspecified"], ["2025-05-16", 2, "Unspecified"], ["2025-05-17", 2, "LeisureTime"], ["2025-05-18", 2, "LeisureTime"], ["2025-05-19", 2, "Work"], ["2025-05-20", 2, "Work"], ["2025-05-21", 9, "Unspecified"], ["2025-05-22", 2, "Vacation"], ["2025-05-23", 1, "Vacation"], ["2025-05-23", 2, "Vacation"], ["2025-05-24", 1, "Vacation"], ["2025-05-25", 1, "Vacation"], ["2025-05-29", 12, "Work"], ["2025-05-29", 7, "Dinner"], ["2025-05-31", 4, "Dinner"], ["2025-05-31", 10, "Unspecified"], ["2025-06-01", 1, "LeisureTime"], ["2025-06-02", 10, "Work"], ["2025-06-03", 4, "Work"], ["2025-06-04", 11, "Unspecified"], ["2025-06-05", 11, "Unspecified"], ["2025-06-05", 7, "Work"], ["2025-06-06", 9, "Work"], ["2025-06-07", 9, "Unspecified"], ["2025-06-07", 2, "LeisureTime"], ["2025-06-08", 8, "Unspecified"], ["2025-06-09", 12, "Work"], ["2025-06-10", 8, "Work"], ["2025-06-11", 2, "Work"], ["2025-06-12", 10, "Work"], ["2025-06-13", 4, "Work"], ["2025-06-14", 2, "Unspecified"], ["2025-06-14", 12, "Party"], ["2025-06-15", 15, "Unspecified"], ["2025-06-15", 8, "Unspecified"], ["2025-06-16", 4, "Work"], ["2025-06-17", 4, "Work"], ["2025-06-18", 2, "Work"], ["2025-06-19", 2, "LeisureTime"], ["2025-06-19", 11, "Unspecified"], ["2025-06-20", 11, "Unspecified"], ["2025-06-20", 1, "Unspecified"], ["2025-06-21", 2, "Unspecified"], ["2025-06-22", 2, "Unspecified"], ["2025-06-23", 8, "Work"], ["2025-06-23", 2, "Dinner"], ["2025-06-24", 18, "Work"], ["2025-06-25", 8, "Unspecified"], ["2025-06-26", 4, "Work"], ["2025-06-27", 1, "Unspecified"], ["2025-06-28", 4, "Vacation"], ["2025-06-29", 4, "Vacation"], ["2025-06-30", 4, "Vacation"], ["2025-07-01", 17, "Work"], ["2025-07-02", 4, "Work"], ["2025-07-03", 9, "Work"], ["2025-07-04", 1, "Vacation"], ["2025-07-05", 1, "Vacation"], ["2025-07-05", 8, "Party"], ["2025-07-06", 1, "Unspecified"], ["2025-07-07", 1, "Vacation"], ["2025-07-08", 1, "Vacation"], ["2025-07-09", 1, "Vacation"], ["2025-07-09", 2, "Vacation"], ["2025-07-10", 1, "Vacation"], ["2025-07-11", 1, "Vacation"], ["2025-07-12", 1, "Vacation"], ["2025-07-12", 2, "Vacation"], ["2025-07-13", 2, "Vacation"], ["2025-07-14", 1, "Vacation"], ["2025-07-14", 2, "Dinner"], ["2025-07-15", 7, "Work"], ["2025-07-16", 4, "Work"], ["2025-07-17", 8, "Work"], ["2025-07-18", 9, "Work"], ["2025-07-19", 11, "Unspecified"], ["2025-07-19", 7, "Party"], ["2025-07-20", 14, "Unspecified"], ["2025-07-21", 4, "Work"], ["2025-07-22", 1, "Vacation"], ["2025-07-23", 1, "Vacation"], ["2025-07-24", 1, "Vacation"], ["2025-07-25", 16, "Unspecified"], ["2025-07-25", 8, "Unspecified"], ["2025-07-26", 10, "Unspecified"], ["2025-07-27", 2, "Unspecified"], ["2025-07-27", 15, "Unspecified"], ["2025-07-28", 2, "Work"], ["2025-07-29", 7, "Work"], ["2025-07-30", 4, "Work"], ["2025-07-31", 4, "Work"], ["2025-08-01", 4, "Work"], ["2025-08-02", 4, "Dinner"], ["2025-08-02", 8, "LeisureTime"], ["2025-08-03", 2, "Unspecified"], ["2025-08-04", 12, "Work"], ["2025-08-04", 15, "Unspecified"], ["2025-08-05", 12, "Work"], ["2025-08-06", 9, "Work"], ["2025-08-07", 19, "Unspecified"], ["2025-08-07", 8, "Unspecified"], ["2025-08-08", 2, "Work"], ["2025-08-08", 3, "Unspecified"], ["2025-08-09", 3, "Unspecified"], ["2025-08-10", 3, "Unspecified"], ["2025-08-10", 11, "Unspecified"], ["2025-08-11", 3, "Work"], ["2025-08-12", 3, "Work"], ["2025-08-13", 4, "Work"], ["2025-08-14", 3, "Work"], ["2025-08-15", 3, "Work"], ["2025-08-16", 9, "Unspecified"], ["2025-08-16", 12, "Party"], ["2025-08-17", 3, "Unspecified"], ["2025-08-18", 3, "Work"], ["2025-08-19", 3, "Work"], ["2025-08-20", 3, "Work"], ["2025-08-21", 3, "Work"], ["2025-08-22", 3, "Unspecified"], ["2025-08-23", 10, "LeisureTime"], ["2025-08-25", 2, "Work"], ["2025-08-25", 11, "LeisureTime"], ["2025-08-26", 5, "Work"], ["2025-08-27", 5, "Work"], ["2025-08-28", 3, "LeisureTime"], ["2025-08-28", 11, "LeisureTime"], ["2025-08-29", 5, "Work"], ["2025-08-29", 7, "Unspecified"], ["2025-08-30", 1, "LeisureTime"], ["2025-08-30", 3, "Dinner"], ["2025-08-31", 3, "Unspecified"], ["2025-09-01", 3, "Unspecified"], ["2025-09-02", 4, "Work"], ["2025-09-03", 5, "Work"], ["2025-09-04", 7, "Work"], ["2025-09-05", 5, "Party"], ["2025-09-05", 10, "Work"], ["2025-09-06", 3, "Dinner"], ["2025-09-08", 5, "Work"], ["2025-09-09", 3, "Unspecified"], ["2025-09-10", 11, "Unspecified"], ["2025-09-11", 3, "Unspecified"], ["2025-09-12", 1, "Unspecified"], ["2025-09-13", 1, "Unspecified"], ["2025-09-14", 3, "Unspecified"], ["2025-09-15", 3, "Unspecified"], ["2025-09-16", 9, "Unspecified"], ["2025-09-17", 16, "Unspecified"], ["2025-09-17", 9, "Unspecified"], ["2025-09-18", 2, "Unspecified"], ["2025-09-19", 5, "Unspecified"], ["2025-09-20", 3, "Party"], ["2025-09-20", 5, "Unspecified"], ["2025-09-22", 5, "Unspecified"], ["2025-09-22", 7, "Unspecified"], ["2025-09-23", 1, "Unspecified"], ["2025-09-24", 4, "Unspecified"], ["2025-09-25", 3, "Unspecified"], ["2025-09-26", 5, "Unspecified"], ["2025-09-27", 2, "Unspecified"], ["2025-09-28", 3, "Unspecified"], ["2025-09-29", 5, "Work"], ["2025-09-30", 4, "Work"], ["2025-10-01", 7, "Work"], ["2025-10-02", 7, "Work"], ["2025-10-03", 5, "Unspecified"], ["2025-10-03", 3, "Dinner"], ["2025-10-04", 11, "LeisureTime"], ["2025-10-04", 10, "Unspecified"], ["2025-10-05", 3, "Unspecified"], ["2025-10-05", 1, "Unspecified"], ["2025-10-06", 2, "Work"], ["2025-10-07", 4, "Work"], ["2025-10-08", 8, "Unspecified"], ["2025-10-08", 4, "Work"], ["2025-10-09", 2, "Work"], ["2025-10-10", 15, "LeisureTime"], ["2025-10-10", 3, "Work"], ["2025-10-10", 8, "LeisureTime"], ["2025-10-11", 9, "Unspecified"], ["2025-10-12", 9, "Unspecified"], ["2025-10-13", 12, "Work"], ["2025-10-14", 3, "Work"], ["2025-10-15", 2, "Work"], ["2025-10-16", 2, "Work"], ["2025-10-17", 10, "Work"], ["2025-10-18", 3, "Unspecified"], ["2025-10-19", 8, "Unspecified"], ["2025-10-21", 9, "Work"], ["2025-10-22", 5, "Work"], ["2025-10-23", 10, "Work"], ["2025-10-24", 8, "Unspecified"], ["2025-10-24", 4, "Work"], ["2025-10-25", 1, "Unspecified"], ["2025-10-25", 2, "Dinner"], ["2025-10-26", 1, "Unspecified"], ["2025-10-27", 7, "Work"], ["2025-10-28", 5, "Work"], ["2025-10-29", 9, "Work"], ["2025-10-30", 2, "Work"], ["2025-10-31", 4, "Work"], ["2025-11-01", 3, "Unspecified"], ["2025-11-01", 4, "Dinner"], ["2025-11-02", 1, "Unspecified"], ["2025-11-03", 10, "Work"], ["2025-11-04", 2, "Work"], ["2025-11-05", 5, "Work"], ["2025-11-07", 2, "Work"], ["2025-11-08", 5, "Work"], ["2025-11-08", 3, "Unspecified"], ["2025-11-09", 1, "Unspecified"], ["2025-11-10", 16, "Work"], ["2025-11-10", 13, "Unspecified"], ["2025-11-11", 14, "Unspecified"], ["2025-11-12", 13, "Work"], ["2025-11-13", 13, "Work"], ["2025-11-14", 7, "Unspecified"], ["2025-11-15", 4, "Dinner"], ["2025-11-15", 8, "Unspecified"], ["2025-11-16", 2, "Unspecified"], ["2025-11-17", 3, "Work"], ["2025-11-18", 5, "Work"], ["2025-11-19", 13, "Work"], ["2025-11-20", 4, "Work"], ["2025-11-21", 13, "Work"], ["2025-11-22", 10, "Unspecified"], ["2025-11-23", 14, "Unspecified"], ["2025-11-24", 13, "Work"], ["2025-11-25", 8, "Unspecified"], ["2025-11-26", 8, "Unspecified"], ["2025-11-27", 15, "Unspecified"], ["2025-11-27", 4, "Unspecified"], ["2025-11-28", 14, "Unspecified"], ["2025-11-28", 3, "Unspecified"], ["2025-11-29", 11, "Unspecified"], ["2025-11-29", 1, "Unspecified"], ["2025-11-30", 11, "Unspecified"], ["2025-12-01", 2, "Work"], ["2025-12-02", 9, "Work"], ["2025-12-03", 2, "Work"], ["2025-12-04", 5, "Work"], ["2025-12-05", 2, "Work"], ["2025-12-05", 3, "Party"], ["2025-12-06", 13, "Party"], ["2025-12-06", 11, "Unspecified"], ["2025-12-07", 8, "Unspecified"], ["2025-12-08", 12, "Work"], ["2025-12-10", 3, "Party"], ["2025-12-11", 3, "Unspecified"], ["2025-12-13", 3, "Unspecified"], ["2025-12-14", 1, "Unspecified"], ["2025-12-15", 2, "Work"], ["2025-12-16", 7, "Work"], ["2025-12-18", 1, "Unspecified"], ["2025-12-18", 13, "Party"], ["2025-12-19", 3, "Work"], ["2025-12-20", 5, "Unspecified"], ["2025-12-22", 12, "Work"], ["2025-12-23", 15, "Unspecified"], ["2025-12-23", 4, "Unspecified"], ["2025-12-24", 1, "Unspecified"], ["2025-12-25", 6, "Unspecified"], ["2025-12-26", 6, "Vacation"], ["2025-12-27", 6, "Vacation"], ["2025-12-28", 6, "Vacation"], ["2025-12-29", 6, "Vacation"], ["2025-12-30", 6, "Vacation"], ["2025-12-31", 6, "Vacation"], ["2026-01-01", 6, "Vacation"], ["2026-01-02", 6, "Vacation"], ["2026-01-03", 6, "Vacation"], ["2026-01-04", 6, "Vacation"], ["2026-01-05", 6, "Vacation"], ["2026-01-06", 6, "Vacation"], ["2026-01-07", 6, "Work"], ["2026-01-08", 2, "Work"], ["2026-01-09", 4, "Work"], ["2026-01-10", 3, "Unspecified"], ["2026-01-11", 1, "Unspecified"], ["2026-01-12", 12, "Work"], ["2026-01-13", 5, "Work"], ["2026-01-14", 13, "Work"], ["2026-01-15", 8, "Work"], ["2026-01-16", 1, "Unspecified"], ["2026-01-16", 6, "Unspecified"], ["2026-01-17", 6, "Unspecified"], ["2026-01-18", 6, "Unspecified"], ["2026-01-19", 6, "Work"], ["2026-01-20", 4, "Work"], ["2026-01-21", 5, "Work"], ["2026-01-22", 3, "Work"], ["2026-01-23", 2, "Work"], ["2026-01-24", 1, "Unspecified"], ["2026-01-26", 4, "Work"], ["2026-01-27", 5, "Work"], ["2026-01-29", 3, "Work"], ["2026-01-29", 4, "Dinner"], ["2026-01-30", 6, "Work"], ["2026-01-31", 5, "Unspecified"], ["2026-01-31", 4, "Unspecified"], ["2026-02-01", 6, "Unspecified"], ["2026-02-02", 13, "Work"], ["2026-02-03", 8, "Work"], ["2026-02-04", 5, "Work"], ["2026-02-05", 3, "Unspecified"], ["2026-02-06", 2, "Work"], ["2026-02-07", 14, "Unspecified"], ["2026-02-07", 10, "Unspecified"], ["2026-02-07", 6, "Party"], ["2026-02-08", 11, "Unspecified"], ["2026-02-08", 2, "Unspecified"], ["2026-02-09", 7, "Work"], ["2026-02-11", 1, "Work"], ["2026-02-12", 8, "Work"], ["2026-02-13", 6, "Unspecified"], ["2026-02-13", 8, "Work"], ["2026-02-14", 8, "Unspecified"], ["2026-02-14", 11, "Unspecified"], ["2026-02-14", 5, "Unspecified"], ["2026-02-15", 14, "Unspecified"], ["2026-02-15", 7, "Party"], ["2026-02-16", 3, "Unspecified"], ["2026-02-16", 11, "Unspecified"], ["2026-02-17", 6, "Work"], ["2026-02-19", 8, "Work"], ["2026-02-20", 3, "Unspecified"], ["2026-02-21", 8, "Unspecified"], ["2026-02-22", 1, "Unspecified"], ["2026-02-23", 16, "Work"], ["2026-02-24", 5, "Work"], ["2026-02-25", 13, "Work"], ["2026-02-27", 12, "Dinner"], ["2026-02-27", 9, "Work"], ["2026-02-28", 8, "Unspecified"], ["2026-02-28", 9, "Party"], ["2026-03-01", 3, "Unspecified"], ["2026-03-02", 2, "Work"], ["2026-03-03", 4, "Work"], ["2026-03-05", 4, "Work"], ["2026-03-06", 8, "Unspecified"], ["2026-03-07", 6, "Unspecified"], ["2026-03-08", 1, "Unspecified"], ["2026-03-09", 10, "Work"], ["2026-03-10", 8, "Work"], ["2026-03-11", 9, "Work"], ["2026-03-12", 5, "Work"], ["2026-03-13", 6, "Unspecified"], ["2026-03-14", 3, "Unspecified"], ["2026-03-14", 4, "Dinner"], ["2026-03-15", 1, "Unspecified"], ["2026-03-16", 12, "Work"], ["2026-03-19", 5, "Work"], ["2026-03-20", 6, "Work"], ["2026-03-21", 8, "Unspecified"], ["2026-03-21", 3, "Party"], ["2026-03-22", 1, "Unspecified"], ["2026-03-23", 4, "Work"], ["2026-03-24", 13, "Work"], ["2026-03-25", 9, "Work"], ["2026-03-27", 6, "Unspecified"], ["2026-03-28", 8, "Unspecified"], ["2026-03-28", 7, "Dinner"], ["2026-03-29", 10, "LeisureTime"], ["2026-03-30", 1, "Work"], ["2026-03-31", 8, "Unspecified"], ["2026-03-31", 7, "Dinner"], ["2026-04-01", 5, "Unspecified"], ["2026-04-02", 1, "Vacation"], ["2026-04-03", 1, "Vacation"], ["2026-04-03", 5, "Vacation"], ["2026-04-04", 1, "Vacation"], ["2026-04-04", 5, "Vacation"], ["2026-04-05", 1, "Unspecified"], ["2026-04-06", 2, "Work"], ["2026-04-07", 3, "Work"], ["2026-04-08", 12, "Work"], ["2026-04-09", 13, "Work"], ["2026-04-10", 3, "Unspecified"], ["2026-04-10", 7, "Party"], ["2026-04-11", 8, "Unspecified"], ["2026-04-11", 12, "Party"], ["2026-04-12", 6, "Unspecified"], ["2026-04-13", 9, "Work"], ["2026-04-14", 5, "Work"], ["2026-04-15", 4, "Work"], ["2026-04-16", 6, "Unspecified"], ["2026-04-16", 3, "Dinner"], ["2026-04-17", 4, "Work"], ["2026-04-18", 1, "Unspecified"], ["2026-04-18", 4, "Party"], ["2026-04-19", 8, "Unspecified"], ["2026-04-20", 5, "Work"], ["2026-04-21", 7, "Work"], ["2026-04-22", 9, "Work"], ["2026-04-24", 2, "Unspecified"], ["2026-04-25", 3, "Unspecified"], ["2026-04-26", 15, "Unspecified"], ["2026-04-26", 6, "Unspecified"], ["2026-04-27", 16, "Work"], ["2026-04-30", 2, "Work"], ["2026-05-01", 11, "Unspecified"], ["2026-05-02", 6, "Unspecified"], ["2026-05-03", 4, "Unspecified"], ["2026-05-03", 10, "Unspecified"], ["2026-05-04", 14, "Unspecified"], ["2026-05-04", 5, "Work"], ["2026-05-05", 13, "Work"], ["2026-05-06", 12, "Work"], ["2026-05-07", 9, "Work"], ["2026-05-08", 8, "Unspecified"], ["2026-05-08", 2, "Party"], ["2026-05-09", 1, "LeisureTime"], ["2026-05-09", 3, "Dinner"], ["2026-05-10", 1, "Unspecified"], ["2026-05-10", 9, "Party"], ["2026-05-11", 16, "Work"], ["2026-05-12", 5, "Work"], ["2026-05-13", 10, "Work"], ["2026-05-14", 6, "Unspecified"], ["2026-05-15", 3, "Unspecified"], ["2026-05-16", 6, "Unspecified"], ["2026-05-16", 4, "Unspecified"], ["2026-05-17", 3, "Unspecified"], ["2026-05-18", 6, "Work"], ["2026-05-19", 5, "Work"], ["2026-05-20", 10, "Unspecified"], ["2026-05-21", 10, "Unspecified"], ["2026-05-22", 5, "Work"], ["2026-05-23", 14, "Unspecified"], ["2026-05-23", 1, "Unspecified"], ["2026-05-24", 1, "Unspecified"], ["2026-05-25", 1, "Unspecified"], ["2026-05-26", 4, "Work"], ["2026-05-27", 4, "Work"], ["2026-05-28", 5, "Work"], ["2026-05-29", 8, "Unspecified"], ["2026-05-29", 3, "Dinner"], ["2026-05-30", 11, "Unspecified"], ["2026-05-30", 1, "Unspecified"], ["2026-05-31", 1, "Unspecified"], ["2026-06-01", 2, "Work"], ["2026-06-01", 6, "Work"], ["2026-06-02", 10, "Unspecified"], ["2026-06-03", 10, "Unspecified"], ["2026-06-03", 4, "Work"], ["2026-06-04", 6, "Unspecified"], ["2026-06-05", 6, "Work"], ["2026-06-06", 2, "Unspecified"], ["2026-06-07", 9, "Unspecified"], ["2026-06-08", 2, "Work"], ["2026-06-08", 5, "Party"], ["2026-06-09", 5, "Work"], ["2026-06-10", 1, "Unspecified"], ["2026-06-10", 9, "Work"], ["2026-06-11", 5, "Work"], ["2026-06-12", 5, "Work"], ["2026-06-13", 9, "Unspecified"], ["2026-06-13", 3, "Dinner"], ["2026-06-14", 6, "Unspecified"], ["2026-06-15", 13, "Work"], ["2026-06-16", 1, "Unspecified"], ["2026-06-16", 6, "Vacation"], ["2026-06-17", 6, "Vacation"], ["2026-06-18", 6, "Vacation"], ["2026-06-19", 3, "Vacation"], ["2026-06-20", 3, "Vacation"], ["2026-06-21", 3, "Vacation"], ["2026-06-21", 6, "Vacation"], ["2026-06-22", 4, "Work"], ["2026-06-23", 10, "Work"], ["2026-06-24", 16, "Work"], ["2026-06-25", 7, "Work"], ["2026-06-26", 4, "Work"], ["2026-06-28", 1, "Unspecified"], ["2026-06-29", 12, "Work"], ["2026-06-30", 9, "Work"], ["2026-07-01", 6, "Unspecified"], ["2026-07-01", 1, "Unspecified"], ["2026-07-02", 5, "Work"], ["2026-07-02", 3, "Unspecified"], ["2026-07-03", 5, "Unspecified"], ["2026-07-03", 3, "Vacation"], ["2026-07-04", 3, "Vacation"], ["2026-07-04", 5, "Vacation"], ["2026-07-05", 1, "Vacation"], ["2026-07-06", 12, "Work"], ["2026-07-07", 2, "Work"], ["2026-07-08", 13, "Work"], ["2026-07-09", 7, "Unspecified"], ["2026-07-10", 8, "Unspecified"], ["2026-07-11", 7, "Vacation"], ["2026-07-12", 7, "Vacation"], ["2026-07-13", 7, "Vacation"], ["2026-07-13", 6, "Dinner"], ["2026-07-14", 6, "Vacation"]];
+
+const CATS = ["Work","Casual","LeisureTime","Vacation","Dinner","Party","Event","Sport","Unspecified"];
+
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function mesesEntre(a,b){return (b.getFullYear()-a.getFullYear())*12 + (b.getMonth()-a.getMonth())}
+
+/* Rebuilds the monthly value series from purchase date to today.
+   In the real app this data comes from the Valores sheet (daily auto-fetch). */
+function genHist(r){
+  r.hist = [];
+  if(!(r.compra && r.actual)) { if(r.compra) r.hist=[{d:r.compraFecha, v:r.compra}]; return; }
+  const n = Math.max(mesesEntre(r.compraFecha, HOY),1);
+  const rr = mulberry32(r.id*7919 + r.compra);
+  for(let i=0;i<=n;i++){
+    const t=i/n;
+    const base = r.compra + (r.actual - r.compra)*t;
+    const noise = (i===0||i===n)?0:(rr()-.5)*r.compra*.05;
+    const d = new Date(r.compraFecha); d.setMonth(d.getMonth()+i);
+    r.hist.push({d, v:Math.round(base+noise)});
+  }
+}
+
+const relojes = RAW_WATCHES.map(w=>{
+  const r = {
+    id:w.id, nombre:w.nombre, ref:w.ref, material:w.material, diametro:w.diametro,
+    dial:w.dial, bisel:w.bisel, correa:w.correa,
+    compra:w.compra, actual:w.target||0,
+    compraFecha:new Date(w.cfy, w.cfm, 1),
+    source:w.source, boxpapers:w.boxpapers, condicion:w.condicion,
+    serial:"", notas:"", fotos:[], vendido:null, hist:[],
+  };
+  genHist(r);
+  return r;
+});
+
+const wears = RAW_WEARS.map(([f,id,cat])=>{
+  const [y,m,d] = f.split("-").map(Number);
+  return {uid:nextWearId++, date:new Date(y,m-1,d), watchId:id, cat};
+});
+
+const fmt = n => "$" + n.toLocaleString("en-US");
+const MASK = "•••••";
+let privado = true;
+const dinero = n => privado ? MASK : fmt(n);
+const dineroOpt = n => n ? dinero(n) : "—";
+const byId = id => relojes.find(r=>r.id===id);
+const mismoDia = (a,b)=>a.toDateString()===b.toDateString();
+const wearsDe = f => wears.filter(w=>mismoDia(w.date,f));
+const mesCorto = d => d.toLocaleDateString("en-US",{month:"short", year:"numeric"});
+const activos = () => relojes.filter(r=>!r.vendido);
+
+/* ================= Dial SVG ================= */
+function luminoso(hex){const n=parseInt(hex.slice(1),16);return (0.299*((n>>16)&255)+0.587*((n>>8)&255)+0.114*(n&255))>150}
+function dialSVG(r, size=52){
+  const manos = luminoso(r.dial) ? "#3a3a3a" : "#EFEDE4";
+  return `<svg width="${size}" height="${size}" viewBox="0 0 52 52" aria-hidden="true">
+    <rect x="20" y="1" width="12" height="50" rx="3" fill="${r.correa}"/>
+    <circle cx="26" cy="26" r="19" fill="${r.bisel}"/>
+    <circle cx="26" cy="26" r="15" fill="${r.dial}"/>
+    <g stroke="${manos}" stroke-width="1.6" stroke-linecap="round">
+      <line x1="26" y1="26" x2="26" y2="15.5"/><line x1="26" y1="26" x2="33" y2="30"/>
+    </g>
+    <circle cx="26" cy="26" r="1.6" fill="${manos}"/>
+  </svg>`;
+}
+function miniatura(r, size=40){
+  if(r.fotos.length) return `<span class="dial" style="width:${size+12}px;height:${size+12}px;padding:0"><img src="${r.fotos[0]}" alt=""></span>`;
+  return `<span class="dial">${dialSVG(r,size)}</span>`;
+}
+function miniDots(fecha, max=3){
+  const ws = wearsDe(fecha);
+  if(!ws.length) return `<span class="mini-dots"></span>`;
+  return `<span class="mini-dots">${ws.slice(0,max).map(w=>`<i style="background:${byId(w.watchId).bisel}"></i>`).join("")}</span>`;
+}
+
+/* ================= Helpers ================= */
+function calculaStreak(){
+  let s=0; const d=new Date(HOY);
+  if(!wearsDe(d).length) d.setDate(d.getDate()-1);
+  while(wearsDe(d).length){s++;d.setDate(d.getDate()-1)}
+  return s;
+}
+function ultimaVez(id){
+  const w=[...wears].filter(x=>x.watchId===id).sort((a,b)=>b.date-a.date)[0];
+  if(!w) return "—";
+  if(mismoDia(w.date,HOY)) return "Today";
+  return w.date.toLocaleDateString("en-US",{month:"short",day:"numeric"});
+}
+function topOcasion(id){
+  const c={};
+  wears.filter(w=>w.watchId===id && w.cat!=="Unspecified").forEach(w=>c[w.cat]=(c[w.cat]||0)+1);
+  return Object.entries(c).sort((a,b)=>b[1]-a[1])[0]?.[0] ?? "—";
+}
+function toast(msg){
+  const t=document.getElementById("toast");
+  t.textContent=msg;
+  t.classList.add("visible");
+  clearTimeout(t._t);
+  t._t=setTimeout(()=>t.classList.remove("visible"),2200);
+}
+function pintaTodo(){
+  pintaHoyCard();pintaTiles();pintaTopHome();
+  pintaCalendario();pintaRanking();pintaHistorial();pintaColeccion();
+}
+
+/* ================= Privacy ================= */
+const OJO_ABIERTO = `<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/>`;
+const OJO_CERRADO = `<path d="M3 4l18 16M10.6 6a9.8 9.8 0 0 1 1.4-.1c6 0 9.5 6.1 9.5 6.1a17 17 0 0 1-3 3.5M6.6 7.4A16.7 16.7 0 0 0 2.5 12S6 18.1 12 18.1a9.4 9.4 0 0 0 3.9-.8"/>`;
+function pintaOjo(){
+  document.getElementById("ojoIcon").innerHTML = privado ? OJO_CERRADO : OJO_ABIERTO;
+  document.getElementById("btnOjo").classList.toggle("on", !privado);
+  document.getElementById("btnOjo").setAttribute("aria-pressed", String(!privado));
+  document.getElementById("avisoPrivacidad").style.display = privado ? "flex" : "none";
+}
+document.getElementById("btnOjo").addEventListener("click",()=>{
+  privado=!privado;
+  pintaOjo(); pintaColeccion(); pintaRanking();
+});
+
+/* ================= HOME ================= */
+document.getElementById("fechaHoy").textContent =
+  HOY.toLocaleDateString("en-US",{weekday:"long", month:"long", day:"numeric"});
+
+function pintaHoyCard(){
+  const ws = wearsDe(HOY);
+  const c = document.getElementById("hoyCard");
+  if(!ws.length){
+    c.innerHTML = `<button class="cta-log" onclick="abreLog()">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="12" r="6.5"/><path d="M11 9v3l2 1.5M8.5 5.5 9 3h4l.5 2.5M8.5 18.5 9 21h4l.5-2.5"/><path d="M18.5 15v5M16 17.5h5"/></svg>
+      Log today's wear
+    </button>`;
+    return;
+  }
+  c.innerHTML = `<div class="card hoy-card">
+    <div class="hoy-head">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5 10 18 19.5 7"/></svg>
+      On the wrist today
+    </div>
+    ${ws.map(w=>{
+      const r=byId(w.watchId);
+      return `<div class="wear-row">
+        ${miniatura(r,40)}
+        <span class="nombre">${esc(r.nombre)}</span>
+        <span class="cat-tag cat-${w.cat}">${w.cat}</span>
+        <button class="btn-x" aria-label="Delete entry" onclick="borraWear('${w.uid}')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>`;
+    }).join("")}
+    <button class="hoy-add" onclick="abreLog()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      Add another watch
+    </button>
+  </div>`;
+}
+
+function pintaTiles(){
+  const mes = wears.filter(w=>w.date.getMonth()===HOY.getMonth() && w.date.getFullYear()===HOY.getFullYear()).length;
+  const mesNombre = HOY.toLocaleDateString("en-US",{month:"long"});
+  const tiles = [
+    {n:calculaStreak(), l:"Day streak", ico:`<path d="M12 3s5 4.6 5 9a5 5 0 0 1-10 0c0-1.8.8-3.4 1.7-4.7C9.4 9 10 10 11 10.3 10.7 7.5 12 3 12 3Z"/>`},
+    {n:mes, l:"Wears in "+mesNombre, ico:`<rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16M9.5 15.5l1.8 1.8 3.4-3.6"/>`},
+    {n:activos().length, l:"In rotation", ico:`<circle cx="12" cy="12" r="6"/><path d="M12 9.5V12l1.8 1.3"/>`},
+  ];
+  document.getElementById("tiles").innerHTML = tiles.map(t=>
+    `<div class="card tile">
+      <span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${t.ico}</svg></span>
+      <div class="num">${t.n}</div>
+      <div class="lbl">${t.l}</div>
+    </div>`).join("");
+}
+
+function pintaTopHome(){
+  const desde=new Date(HOY); desde.setDate(desde.getDate()-29);
+  const set=wears.filter(w=>w.date>=desde);
+  const counts={};
+  set.forEach(w=>counts[w.watchId]=(counts[w.watchId]||0)+1);
+  const orden=Object.entries(counts).map(([id,c])=>({r:byId(+id),c})).sort((a,b)=>b.c-a.c).slice(0,3);
+  document.getElementById("topHome").innerHTML = orden.length ? orden.map((o,i)=>
+    `<button class="fila" style="width:100%" onclick="abreDetalle(${o.r.id})">
+      <span class="rango">#${i+1}</span>
+      ${miniatura(o.r,42)}
+      <div class="fila-info">
+        <div class="nombre">${esc(o.r.nombre)}</div>
+        <div class="meta">${o.c} wears · last worn ${ultimaVez(o.r.id)}</div>
+      </div>
+      <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>
+    </button>`).join("")
+    : `<div class="vacio"><strong>No wears in the last 30 days</strong>Log one from the Home screen.</div>`;
+}
+
+/* ================= CALENDAR (collapsible) ================= */
+let calY = HOY.getFullYear(), calM = HOY.getMonth();
+let calExpandido = false;
+document.getElementById("calPrev").addEventListener("click",()=>{calM--;if(calM<0){calM=11;calY--}pintaCalendario()});
+document.getElementById("calNext").addEventListener("click",()=>{calM++;if(calM>11){calM=0;calY++}pintaCalendario()});
+document.getElementById("calToggle").addEventListener("click",()=>{
+  calExpandido = !calExpandido;
+  if(!calExpandido){ calY=HOY.getFullYear(); calM=HOY.getMonth(); }
+  pintaCalendario();
+});
+
+function diaCell(fecha){
+  const hoy = mismoDia(fecha,HOY);
+  const futuro = fecha > HOY;
+  return `<button class="cal-day ${hoy?"hoy":""} ${futuro?"futuro":""}"
+    onclick="abreDia('${fecha.toISOString()}')" aria-label="${fecha.toDateString()}">
+    <span>${fecha.getDate()}</span>${miniDots(fecha)}
+  </button>`;
+}
+
+function pintaCalendario(){
+  const dows = ["S","M","T","W","T","F","S"];
+  let html = dows.map(d=>`<span class="cal-dow">${d}</span>`).join("");
+
+  if(!calExpandido){
+    const inicio = new Date(HOY); inicio.setDate(HOY.getDate()-HOY.getDay());
+    for(let i=0;i<7;i++){
+      const f = new Date(inicio); f.setDate(inicio.getDate()+i);
+      html += diaCell(f);
+    }
+    document.getElementById("calMes").textContent = "This week";
+    document.getElementById("calNavBtns").hidden = true;
+    document.getElementById("calResumen").hidden = true;
+  } else {
+    const primero = new Date(calY, calM, 1);
+    const diasMes = new Date(calY, calM+1, 0).getDate();
+    for(let i=0;i<primero.getDay();i++) html += `<span class="cal-day fuera"></span>`;
+    for(let d=1; d<=diasMes; d++) html += diaCell(new Date(calY, calM, d));
+    document.getElementById("calMes").textContent =
+      primero.toLocaleDateString("en-US",{month:"long", year:"numeric"});
+    document.getElementById("calNavBtns").hidden = false;
+    pintaResumenMes();
+  }
+  document.getElementById("calGrid").innerHTML = html;
+  const tog = document.getElementById("calToggle");
+  tog.classList.toggle("abierto", calExpandido);
+  tog.setAttribute("aria-expanded", String(calExpandido));
+  document.getElementById("calToggleLbl").textContent = calExpandido ? "Collapse" : "Full month";
+}
+
+function pintaResumenMes(){
+  const set = wears.filter(w=>w.date.getMonth()===calM && w.date.getFullYear()===calY);
+  const res = document.getElementById("calResumen");
+  res.hidden = false;
+  if(!set.length){
+    res.innerHTML = `<div class="vacio"><strong>No wears this month</strong>Tap a day to log one.</div>`;
+    return;
+  }
+  const counts={};
+  set.forEach(w=>counts[w.watchId]=(counts[w.watchId]||0)+1);
+  const top = Object.entries(counts).map(([id,c])=>({r:byId(+id),c})).sort((a,b)=>b.c-a.c)[0];
+  const diasCon = new Set(set.map(w=>w.date.getDate())).size;
+  res.innerHTML = `<div class="fila">
+    ${miniatura(top.r,44)}
+    <div class="fila-info">
+      <div class="meta" style="margin:0 0 3px">Month leader · ${set.length} wears · ${diasCon} days tracked</div>
+      <div class="nombre">${esc(top.r.nombre)}</div>
+    </div>
+    <span class="pct">${top.c}×</span>
+  </div>`;
+}
+
+/* ================= STATS ================= */
+const RANGOS=[["7D",7],["30D",30],["90D",90],["YTD","ytd"],["All",9999]];
+let filtroDias=30, filtroCat="All";
+
+document.getElementById("segVista").addEventListener("click",e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  document.querySelectorAll("#segVista button").forEach(x=>x.classList.toggle("sel",x===b));
+  document.getElementById("vistaRanking").hidden = b.dataset.v!=="ranking";
+  document.getElementById("vistaHistory").hidden = b.dataset.v!=="history";
+});
+function pintaSegFecha(){
+  document.getElementById("segFecha").innerHTML = RANGOS.map(([lbl,d])=>
+    `<button class="${String(d)===String(filtroDias)?"sel":""}" data-dias="${d}">${lbl}</button>`).join("");
+}
+document.getElementById("segFecha").addEventListener("click",e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  filtroDias = b.dataset.dias==="ytd" ? "ytd" : +b.dataset.dias;
+  pintaSegFecha(); pintaRanking();
+});
+function pintaChipsCat(){
+  document.getElementById("chipsCat").innerHTML = ["All",...CATS].map(c=>
+    `<button class="chip ${c===filtroCat?"activa":""}" data-cat="${c}">${c}</button>`).join("");
+}
+document.getElementById("chipsCat").addEventListener("click",e=>{
+  const b=e.target.closest(".chip"); if(!b) return;
+  filtroCat=b.dataset.cat; pintaChipsCat(); pintaRanking();
+});
+function wearsFiltrados(){
+  let desde;
+  if(filtroDias==="ytd") desde = new Date(HOY.getFullYear(),0,1);
+  else { desde = new Date(HOY); desde.setDate(desde.getDate()-filtroDias+1); }
+  return wears.filter(w=>w.date>=desde && (filtroCat==="All"||w.cat===filtroCat));
+}
+function pintaRanking(){
+  const set=wearsFiltrados();
+  const cont=document.getElementById("listaRanking");
+  const rangoLbl=RANGOS.find(([,d])=>String(d)===String(filtroDias))[0];
+  const lblRango = rangoLbl==="All" ? "all time" : rangoLbl==="YTD" ? "year to date" : "last "+rangoLbl;
+  document.getElementById("resumenFiltro").textContent =
+    `${set.length} wear${set.length===1?"":"s"} · ${lblRango}${filtroCat==="All"?"":" · "+filtroCat}`;
+  if(set.length===0){
+    cont.innerHTML=`<div class="vacio"><strong>No wears in this range</strong>Try a wider date range or another category.</div>`;
+    document.getElementById("occCard").style.display="none";
+    return;
+  }
+  const counts={};
+  set.forEach(w=>counts[w.watchId]=(counts[w.watchId]||0)+1);
+  const orden=Object.entries(counts).map(([id,c])=>({r:byId(+id),c})).sort((a,b)=>b.c-a.c);
+  const max=orden[0].c;
+  cont.innerHTML=orden.map((o,i)=>{
+    const pct=Math.round(o.c/set.length*100);
+    const total=wears.filter(w=>w.watchId===o.r.id).length;
+    const cpu = o.r.compra ? (privado?MASK:fmt(Math.round(o.r.compra/Math.max(total,1)))) : "—";
+    return `<button class="fila" style="width:100%" onclick="abreDetalle(${o.r.id})">
+      <span class="rango">#${i+1}</span>
+      ${miniatura(o.r,46)}
+      <div class="fila-info">
+        <div class="nombre">${esc(o.r.nombre)}</div>
+        <div class="meta">${o.c} wear${o.c===1?"":"s"} · ${cpu}/wear</div>
+        <div class="barra"><i style="width:${o.c/max*100}%"></i></div>
+      </div>
+      <span class="pct">${pct}%</span>
+    </button>`;
+  }).join("");
+  pintaOcasiones(set);
+}
+function pintaOcasiones(set){
+  const card=document.getElementById("occCard");
+  card.style.display="block";
+  const c={};
+  set.forEach(w=>c[w.cat]=(c[w.cat]||0)+1);
+  const orden=CATS.filter(x=>c[x]).map(x=>[x,c[x]]);
+  card.innerHTML=`<div class="sub-titulo" style="font-size:15px">By occasion</div>
+    <div class="occ-bar">${orden.map(([cat,n])=>`<i class="c-${cat}" style="width:${n/set.length*100}%"></i>`).join("")}</div>
+    <div class="occ-leyenda">${orden.map(([cat,n])=>
+      `<span class="occ-item"><span class="sw c-${cat}"></span>${cat} · ${Math.round(n/set.length*100)}%</span>`).join("")}</div>`;
+}
+function pintaHistorial(){
+  const ult=[...wears].sort((a,b)=>b.date-a.date || b.uid-a.uid).slice(0,25);
+  const grupos = [];
+  ult.forEach(w=>{
+    const key = w.date.toDateString();
+    let g = grupos.find(x=>x.key===key);
+    if(!g){g={key, fecha:w.date, items:[]}; grupos.push(g)}
+    g.items.push(w);
+  });
+  document.getElementById("listaHistorial").innerHTML = grupos.map(g=>{
+    const lbl = mismoDia(g.fecha,HOY) ? "Today" :
+      g.fecha.toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric",year:"numeric"});
+    return `<div>
+      <div class="hist-fecha">${lbl}</div>
+      <div class="card">${g.items.map(w=>{
+        const r=byId(w.watchId);
+        return `<div class="hist-item">
+          ${miniatura(r,38)}
+          <span class="nombre">${esc(r.nombre)}</span>
+          <span class="cat-tag cat-${w.cat}">${w.cat}</span>
+          <button class="btn-x" aria-label="Delete entry" onclick="borraWear('${w.uid}')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6V4.5A1.5 1.5 0 0 1 9.5 3h5A1.5 1.5 0 0 1 16 4.5V6M4 6h16M6 6l1 14a1.5 1.5 0 0 0 1.5 1.4h7A1.5 1.5 0 0 0 17 20l1-14"/></svg>
+          </button>
+        </div>`;
+      }).join("")}</div>
+    </div>`;
+  }).join("");
+}
+
+/* ================= COLLECTION ================= */
+function pintaColeccion(){
+  const act = activos();
+  const valorados = act.filter(r=>r.actual>0);
+  const total=valorados.reduce((s,r)=>s+r.actual,0);
+  const compra=valorados.reduce((s,r)=>s+r.compra,0);
+  const d=compra?(total-compra)/compra*100:0;
+  const num=document.getElementById("valorTotal");
+  num.textContent=dinero(total);
+  num.classList.toggle("oculto",privado);
+  document.getElementById("valorMeta").innerHTML = privado
+    ? `<span>${act.length} pieces</span><span>${valorados.length} priced</span><span>Tap the eye to reveal</span>`
+    : `<span>${act.length} pieces · ${valorados.length} priced</span><span>Paid ${fmt(compra)}</span><b>${d>=0?"▲ +":"▼ "}${d.toFixed(1)}%</b>`;
+
+  const vendidos = relojes.filter(r=>r.vendido);
+  const grid = act
+    .slice().sort((a,b)=>b.actual-a.actual || wears.filter(w=>w.watchId===b.id).length - wears.filter(w=>w.watchId===a.id).length)
+    .map(r=>{
+      const dd=r.compra&&r.actual?(r.actual-r.compra)/r.compra*100:0, pos=dd>=0;
+      return `<button class="card wcard" onclick="abreDetalle(${r.id})">
+        ${r.fotos.length
+          ? `<span class="dial" style="width:100%;aspect-ratio:4/3;padding:0"><img src="${r.fotos[0]}" alt=""></span>`
+          : `<span class="dial">${dialSVG(r,54)}</span>`}
+        <span class="nombre">${esc(r.nombre)}</span>
+        <span>
+          ${r.actual
+            ? `<span class="valor">${dinero(r.actual)}</span>
+               <div class="sub delta ${pos?"pos":"neg"}">${privado?"":(pos?"+":"")+dd.toFixed(1)+"%"}</div>`
+            : `<span class="add-hint">Add price info →</span>`}
+        </span>
+      </button>`;
+    }).join("");
+
+  const soldHtml = vendidos.length ? `
+    <div class="fila-titulo" style="margin-top:26px"><span class="sub-titulo">Sold</span></div>
+    <div class="card">${vendidos.map(r=>{
+      const gan = (r.vendido.precio && r.compra) ? r.vendido.precio - r.compra : null;
+      return `<button class="fila" style="width:100%" onclick="abreDetalle(${r.id})">
+        ${miniatura(r,42)}
+        <div class="fila-info">
+          <div class="nombre">${esc(r.nombre)}</div>
+          <div class="meta">Sold ${mesCorto(r.vendido.fecha)}${r.vendido.precio?` · ${dinero(r.vendido.precio)}`:""}</div>
+        </div>
+        ${gan!==null && !privado ? `<span class="pct ${gan>=0?"":"delta neg"}" style="${gan<0?"color:var(--baja)":""}">${gan>=0?"+":"−"}${fmt(Math.abs(gan))}</span>`:""}
+      </button>`;
+    }).join("")}</div>` : "";
+
+  document.getElementById("gridColeccion").innerHTML = grid;
+  document.getElementById("gridColeccion").insertAdjacentHTML("afterend","");
+  let soldCont = document.getElementById("soldSeccion");
+  if(!soldCont){
+    soldCont = document.createElement("div");
+    soldCont.id = "soldSeccion";
+    document.getElementById("gridColeccion").after(soldCont);
+  }
+  soldCont.innerHTML = soldHtml;
+}
+
+/* ================= Nav ================= */
+function irA(scr){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("activa"));
+  document.getElementById("scr-"+scr).classList.add("activa");
+  document.querySelectorAll(".navbar button").forEach(b=>b.classList.toggle("sel",b.dataset.scr===scr));
+  window.scrollTo({top:0});
+}
+document.querySelector(".navbar").addEventListener("click",e=>{
+  const b=e.target.closest("button"); if(b) irA(b.dataset.scr);
+});
+document.querySelectorAll("[data-goto]").forEach(b=>b.addEventListener("click",()=>irA(b.dataset.goto)));
+
+/* ================= Sheet infra ================= */
+const overlay=document.getElementById("overlay");
+const sheet=document.getElementById("sheet");
+function abreSheet(){overlay.classList.add("abierta");sheet.classList.add("abierta");sheet.scrollTop=0}
+function cierraSheet(){overlay.classList.remove("abierta");sheet.classList.remove("abierta")}
+overlay.addEventListener("click",cierraSheet);
+
+/* ================= Delete wear ================= */
+window.borraWear = function(uid){
+  const i = wears.findIndex(w=>String(w.uid)===String(uid));
+  if(i<0) return;
+  apiTry({action:"deleteWear", id:wears[i].uid});
+  wears.splice(i,1);
+  pintaTodo();
+  if(diaAbierto) pintaDiaSheet();
+  toast("Entry removed");
+};
+
+/* ================= Day sheet ================= */
+let diaAbierto = null;
+window.abreDia = function(iso){
+  diaAbierto = new Date(iso);
+  pintaDiaSheet();
+  abreSheet();
+};
+function pintaDiaSheet(){
+  const f = diaAbierto;
+  const ws = wearsDe(f);
+  const lbl = mismoDia(f,HOY) ? "Today" :
+    f.toLocaleDateString("en-US",{weekday:"long", month:"long", day:"numeric", year:"numeric"});
+  document.getElementById("sheetContenido").innerHTML = `
+    <h2>${lbl}</h2>
+    <div class="p">${ws.length ? ws.length+" wear"+(ws.length===1?"":"s")+" logged" : "Nothing logged this day"}</div>
+    ${ws.map(w=>{
+      const r=byId(w.watchId);
+      return `<div class="sheet-item" style="cursor:default">
+        ${miniatura(r,40)}
+        <span class="nombre" style="flex:1">${esc(r.nombre)}</span>
+        <span class="cat-tag cat-${w.cat}">${w.cat}</span>
+        <button class="btn-x" aria-label="Delete entry" onclick="borraWear('${w.uid}')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>`;
+    }).join("")}
+    <button class="sheet-confirm" onclick="abreLog('${f.toISOString()}')">Add a wear</button>`;
+}
+
+/* ================= Value development chart ================= */
+function chartValor(r){
+  const H = r.hist;
+  if(privado) return `<div class="vd-lock">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+    Chart hidden — tap the eye to reveal
+  </div>`;
+  if(H.length<2) return `<div class="vd-lock">No value history yet — add purchase info to start tracking</div>`;
+  const W=320, HT=148, PADX=8, PADT=22, PADB=24;
+  const vals = H.map(p=>p.v);
+  const min = Math.min(...vals), max = Math.max(...vals), rango=(max-min)||1;
+  const x = i => PADX + i/(H.length-1)*(W-PADX*2);
+  const y = v => HT-PADB - ((v-min)/rango)*(HT-PADT-PADB);
+  const pts = H.map((p,i)=>`${x(i).toFixed(1)},${y(p.v).toFixed(1)}`).join(" ");
+  const area = `${PADX},${HT-PADB} ${pts} ${(W-PADX)},${HT-PADB}`;
+  return `
+    <svg viewBox="0 0 ${W} ${HT}" style="width:100%;height:auto" aria-label="Value history">
+      <line x1="${PADX}" y1="${y(max).toFixed(1)}" x2="${W-PADX}" y2="${y(max).toFixed(1)}" stroke="#ECEAE3" stroke-width="1"/>
+      <line x1="${PADX}" y1="${y(min).toFixed(1)}" x2="${W-PADX}" y2="${y(min).toFixed(1)}" stroke="#ECEAE3" stroke-width="1"/>
+      <polygon points="${area}" fill="rgba(11,61,46,.07)"/>
+      <polyline points="${pts}" fill="none" stroke="#17211C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="${x(0).toFixed(1)}" cy="${y(H[0].v).toFixed(1)}" r="4" fill="#17211C"/>
+      <circle cx="${x(H.length-1).toFixed(1)}" cy="${y(H[H.length-1].v).toFixed(1)}" r="4" fill="#1E7A4E"/>
+      <text x="${PADX}" y="${Math.max(y(max)-7, 10).toFixed(1)}" font-size="10" fill="#A9AFAA" font-family="Archivo">${fmt(max)}</text>
+      <text x="${PADX}" y="${Math.min(y(min)+14, HT-4).toFixed(1)}" font-size="10" fill="#A9AFAA" font-family="Archivo">${fmt(min)}</text>
+    </svg>
+    <div class="vd-eje"><span>${mesCorto(H[0].d)} · purchase</span><span>${mesCorto(HOY)}</span></div>`;
+}
+
+/* ================= Detail sheet ================= */
+window.abreDetalle = function(id){
+  diaAbierto = null;
+  const r=byId(id);
+  const total=wears.filter(w=>w.watchId===id).length;
+  const esVendido = !!r.vendido;
+  const valorRef = esVendido && r.vendido.precio ? r.vendido.precio : r.actual;
+  const gan = (valorRef && r.compra) ? valorRef - r.compra : null;
+  const dd = (gan!==null && r.compra) ? gan/r.compra*100 : 0;
+  const pos = (gan??0)>=0;
+  const slides = r.fotos.length
+    ? r.fotos.map(f=>`<div class="slide"><img src="${f}" alt="${esc(r.nombre)}"></div>`).join("")
+    : `<div class="slide">${dialSVG(r,150)}</div>`;
+  const nSlides = Math.max(r.fotos.length,1);
+  document.getElementById("sheetContenido").innerHTML=`
+    <div class="carrusel" id="carrusel">${slides}</div>
+    ${nSlides>1?`<div class="dots" id="carruselDots">${Array.from({length:nSlides},(_,i)=>`<i class="${i===0?"on":""}"></i>`).join("")}</div>`:""}
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+      <div style="min-width:0">
+        <div class="det-nombre">${esc(r.nombre)}</div>
+        <div class="det-ref">${r.ref?`Ref. ${esc(r.ref)} · `:""}${esc(r.material)}${r.diametro?` · ${r.diametro} mm`:""}</div>
+        ${esVendido?`<span class="sold-badge">SOLD · ${mesCorto(r.vendido.fecha)}</span>`:""}
+      </div>
+      <button class="btn-edit" onclick="abreFormReloj(${r.id})">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3.5 20.5 7 8.5 19H5v-3.5Z"/></svg>
+        Edit
+      </button>
+    </div>
+
+    <div class="vd">
+      <div class="vd-head">
+        <span class="vd-precio">${dineroOpt(valorRef)}</span>
+        ${gan!==null && !privado ? `<span class="vd-badge ${pos?"pos":"neg"}">${pos?"+":""}${dd.toFixed(1)}%</span>`:""}
+      </div>
+      <div class="vd-sub">${
+        privado ? "Values hidden" :
+        esVendido ? (r.vendido.precio
+          ? `Sold for ${fmt(r.vendido.precio)}${gan!==null?` · <b class="${pos?"pos":"neg"}">${pos?"+":"−"}${fmt(Math.abs(gan))}</b> realized`:""}`
+          : "Sold · sale price not recorded") :
+        (gan!==null
+          ? `<b class="${pos?"pos":"neg"}">${pos?"+":"−"}${fmt(Math.abs(gan))}</b> since purchase ${mesCorto(r.compraFecha)}`
+          : "Add purchase info to track value")
+      }</div>
+      <div class="vd-titulo">Value development</div>
+      ${chartValor(r)}
+    </div>
+
+    <div class="det-stats">
+      <div class="det-stat"><div class="v">${total}</div><div class="l">Total wears</div></div>
+      <div class="det-stat"><div class="v">${r.compra?(privado?MASK:fmt(Math.round(r.compra/Math.max(total,1)))):"—"}</div><div class="l">Cost per wear</div></div>
+      <div class="det-stat"><div class="v">${ultimaVez(id)}</div><div class="l">Last worn</div></div>
+      <div class="det-stat"><div class="v">${topOcasion(id)}</div><div class="l">Top occasion</div></div>
+    </div>
+
+    <div class="det-lista">
+      <div class="det-row"><span class="k">Purchase price</span><span class="v">${dineroOpt(r.compra)}</span></div>
+      <div class="det-row"><span class="k">Acquired</span><span class="v">${mesCorto(r.compraFecha)}</span></div>
+      <div class="det-row"><span class="k">Source</span><span class="v">${esc(r.source)||"—"}</span></div>
+      <div class="det-row"><span class="k">Box & Papers</span><span class="v">${esc(r.boxpapers)||"—"}</span></div>
+      <div class="det-row"><span class="k">Condition</span><span class="v">${esc(r.condicion)||"—"}</span></div>
+      <div class="det-row"><span class="k">Serial number</span><span class="v">${esc(r.serial)||"—"}</span></div>
+      <div class="det-row"><span class="k">Notes</span><span class="v">${esc(r.notas)||"—"}</span></div>
+      ${esVendido?`<div class="det-row"><span class="k">Sold</span><span class="v">${mesCorto(r.vendido.fecha)} · ${dineroOpt(r.vendido.precio)}</span></div>`:""}
+    </div>`;
+  abreSheet();
+  const car = document.getElementById("carrusel");
+  const dots = document.getElementById("carruselDots");
+  if(car && dots){
+    car.addEventListener("scroll",()=>{
+      const i = Math.round(car.scrollLeft / car.clientWidth);
+      dots.querySelectorAll("i").forEach((d,j)=>d.classList.toggle("on",j===i));
+    },{passive:true});
+  }
+};
+
+/* ================= Log flow ================= */
+let selReloj=null, selCat=null, fechaLog=null;
+window.abreLog = function(iso){
+  diaAbierto = null;
+  fechaLog = iso ? new Date(iso) : new Date(HOY);
+  selReloj=null; selCat=null;
+  pintaLogPaso1(); abreSheet();
+};
+function lblFechaLog(){
+  return mismoDia(fechaLog,HOY) ? "today" :
+    fechaLog.toLocaleDateString("en-US",{month:"short",day:"numeric"});
+}
+function pintaLogPaso1(){
+  document.getElementById("sheetContenido").innerHTML=`
+    <h2>Log a wear · ${lblFechaLog()}</h2>
+    <div class="p">Step 1 of 2 · pick the watch</div>
+    <div>${activos().map(r=>
+      `<button class="sheet-item" data-id="${r.id}">
+        ${miniatura(r,40)}
+        <span class="nombre">${esc(r.nombre)}</span>
+      </button>`).join("")}</div>`;
+}
+function pintaLogPaso2(){
+  const r=byId(selReloj);
+  document.getElementById("sheetContenido").innerHTML=`
+    <button class="sheet-back" id="volver">← Change watch</button>
+    <h2>${esc(r.nombre)}</h2>
+    <div class="p">Step 2 of 2 · what's the occasion?</div>
+    <div class="cat-grid">${CATS.map(c=>
+      `<button class="cat-btn ${c===selCat?"sel":""}" data-cat="${c}">${c}</button>`).join("")}</div>
+    <button class="sheet-confirm" id="guardar" ${selCat?"":"disabled"}>Log it</button>`;
+}
+
+/* ================= Add / Edit watch form ================= */
+const SWATCHES = ["#141414","#EFEDE6","#F4F0E6","#1F3A5F","#3E5C43","#5C1F27","#B98F4A","#4B4F54","#2E5F5C","#24406B","#D8C9A6","#B8B2AA"];
+const SW_BEZEL = ["#2B2B2B","#C9CDCB","#B76E4E","#B98F4A","#1F3A5F","#3F9A6E","#4A171E","#0E2B23","#5C2333","#8A6B4A","#8A7B5C","#8A4A45"];
+const MATERIALES = ["Steel","Steel & yellow gold","Steel & rose gold","Yellow gold","Rose gold","White gold","Titanium","Ceramic","Bioceramic","Bronze","Aluminum","Platinum"];
+const SOURCES = ["","Retail shop","Authorized dealer","Chrono24","Private seller","Auction","Gift","Inheritance"];
+const BOXPAPERS = ["","Original box & papers (full set)","Box only","Papers only","None"];
+const CONDICIONES = ["","Unworn","Excellent","Very good","Good","Fair"];
+let nuevoDial = SWATCHES[0], nuevoBisel = SW_BEZEL[0], tempFotos = [], editandoId = null;
+
+document.getElementById("btnAdd").addEventListener("click",()=>abreFormReloj(null));
+window.abreFormReloj = function(editId){
+  diaAbierto = null;
+  editandoId = editId;
+  const r = editId ? byId(editId) : null;
+  nuevoDial = r ? r.dial : SWATCHES[0];
+  nuevoBisel = r ? r.bisel : SW_BEZEL[0];
+  tempFotos = r ? [...r.fotos] : [];
+  const mesInput = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
+  const sel = (opts, cur) => opts.map(o=>`<option ${o===cur?"selected":""}>${esc(o)}</option>`).join("");
+  const swBtns = (list, cur) => list.map(c=>`<button class="swb ${c===cur?"sel":""}" data-c="${c}" style="background:${c}" aria-label="${c}"></button>`).join("");
+  document.getElementById("sheetContenido").innerHTML=`
+    <h2>${r ? "Edit watch" : "Add a watch"}</h2>
+
+    <div class="form-seccion">Watch info</div>
+    <label class="lblf" for="nwNombre">Brand & model</label>
+    <input class="inp" id="nwNombre" placeholder="e.g. Rolex Datejust 36" autocomplete="off" value="${r?esc(r.nombre):""}">
+    <label class="lblf" for="nwRef">Reference number</label>
+    <input class="inp" id="nwRef" placeholder="e.g. 126203" autocomplete="off" value="${r?esc(r.ref):""}">
+    <div class="inp-row">
+      <div>
+        <label class="lblf" for="nwMaterial">Case material</label>
+        <select class="inp" id="nwMaterial">${sel(MATERIALES, r?r.material:"Steel")}</select>
+      </div>
+      <div>
+        <label class="lblf" for="nwDiam">Case diameter (mm)</label>
+        <input class="inp" id="nwDiam" type="number" inputmode="numeric" placeholder="36" value="${r&&r.diametro?r.diametro:""}">
+      </div>
+    </div>
+    <label class="lblf">Dial color</label>
+    <div class="sw-grid" id="swDial">${swBtns(SWATCHES, nuevoDial)}</div>
+    <label class="lblf">Bezel color</label>
+    <div class="sw-grid" id="swBisel">${swBtns(SW_BEZEL, nuevoBisel)}</div>
+
+    <label class="lblf">Photos</label>
+    <input type="file" id="nwFotos" accept="image/*" multiple hidden>
+    <button class="foto-add" id="btnFotos">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="m8 6 1.5-2.5h5L16 6M12 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/></svg>
+      Add photos (you can pick several)
+    </button>
+    <div class="foto-thumbs" id="fotoThumbs"></div>
+
+    <div class="form-seccion">My details</div>
+    <div class="inp-row">
+      <div>
+        <label class="lblf" for="nwPaid">Purchase price (USD)</label>
+        <input class="inp" id="nwPaid" type="number" inputmode="numeric" placeholder="0" value="${r&&r.compra?r.compra:""}">
+      </div>
+      <div>
+        <label class="lblf" for="nwFecha">Acquired</label>
+        <input class="inp" id="nwFecha" type="month" value="${r?mesInput(r.compraFecha):"2026-07"}">
+      </div>
+    </div>
+    <label class="lblf" for="nwSource">Source</label>
+    <select class="inp" id="nwSource">${sel(SOURCES, r?r.source:"")}</select>
+    <label class="lblf" for="nwBox">Box & Papers</label>
+    <select class="inp" id="nwBox">${sel(BOXPAPERS, r?r.boxpapers:"")}</select>
+    <label class="lblf" for="nwCond">Condition</label>
+    <select class="inp" id="nwCond">${sel(CONDICIONES, r?r.condicion:"")}</select>
+    <label class="lblf" for="nwSerial">Serial number</label>
+    <input class="inp" id="nwSerial" placeholder="Optional" autocomplete="off" value="${r?esc(r.serial):""}">
+    <label class="lblf" for="nwNotas">Notes</label>
+    <textarea class="inp" id="nwNotas" placeholder="Optional">${r?esc(r.notas):""}</textarea>
+
+    ${r ? `
+    <div class="form-seccion">Sale</div>
+    <label class="chkrow"><input type="checkbox" id="nwVendido" ${r.vendido?"checked":""}> I sold this watch</label>
+    <div id="ventaCampos" ${r.vendido?"":"hidden"}>
+      <div class="inp-row">
+        <div>
+          <label class="lblf" for="nwSoldPrecio">Sold for (USD)</label>
+          <input class="inp" id="nwSoldPrecio" type="number" inputmode="numeric" placeholder="0" value="${r.vendido&&r.vendido.precio?r.vendido.precio:""}">
+        </div>
+        <div>
+          <label class="lblf" for="nwSoldFecha">Sold on</label>
+          <input class="inp" id="nwSoldFecha" type="month" value="${r.vendido?mesInput(r.vendido.fecha):"2026-07"}">
+        </div>
+      </div>
+      <div class="p" style="margin-top:8px">Sold watches move to the Sold section and stop appearing in the wear log picker.</div>
+    </div>` : ""}
+
+    <div class="p" style="margin:14px 2px 12px">Market value is fetched automatically from the reference number — no manual entry needed.</div>
+    <button class="sheet-confirm" id="guardarReloj">${r?"Save changes":"Add to collection"}</button>`;
+  pintaThumbs();
+  abreSheet();
+};
+function pintaThumbs(){
+  const el = document.getElementById("fotoThumbs");
+  if(!el) return;
+  el.innerHTML = tempFotos.map((f,i)=>
+    `<span class="foto-thumb"><img src="${f}" alt=""><button data-foto="${i}" aria-label="Remove photo">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button></span>`).join("");
+}
+
+/* ================= Sheet event delegation ================= */
+const sc = document.getElementById("sheetContenido");
+sc.addEventListener("change",e=>{
+  if(e.target.id==="nwFotos"){
+    [...e.target.files].forEach(f=>{
+      const rd = new FileReader();
+      rd.onload = ()=>{
+        const dataURL = rd.result;
+        tempFotos.push(dataURL);
+        pintaThumbs();
+        if(ONLINE()){
+          apiPost({action:"uploadPhoto", data:dataURL}).then(res=>{
+            const i = tempFotos.indexOf(dataURL);
+            if(i>=0){ tempFotos[i] = res.url; pintaThumbs(); }
+          }).catch(err=>toast("Photo upload error: "+err.message));
+        }
+      };
+      rd.readAsDataURL(f);
+    });
+    e.target.value="";
+  }
+  if(e.target.id==="nwVendido"){
+    document.getElementById("ventaCampos").hidden = !e.target.checked;
+  }
+});
+sc.addEventListener("click",e=>{
+  const item=e.target.closest(".sheet-item[data-id]");
+  if(item){selReloj=+item.dataset.id;selCat=null;pintaLogPaso2();return}
+  if(e.target.id==="volver"){pintaLogPaso1();return}
+  const cat=e.target.closest(".cat-btn");
+  if(cat){selCat=cat.dataset.cat;pintaLogPaso2();return}
+  if(e.target.id==="guardar"&&selReloj&&selCat){
+    const nuevo = {uid:nuevoUid(), date:new Date(fechaLog), watchId:selReloj, cat:selCat};
+    wears.push(nuevo);
+    apiTry({action:"addWear", id:nuevo.uid, date:isoLocal(nuevo.date), watch_id:selReloj, occasion:selCat});
+    cierraSheet(); pintaTodo();
+    toast("Logged: "+byId(selReloj).nombre.split(" ").slice(0,3).join(" ")+" · "+selCat);
+    return;
+  }
+  const sw=e.target.closest(".swb");
+  if(sw){
+    if(sw.parentElement.id==="swDial") nuevoDial = sw.dataset.c;
+    if(sw.parentElement.id==="swBisel") nuevoBisel = sw.dataset.c;
+    sw.parentElement.querySelectorAll(".swb").forEach(x=>x.classList.toggle("sel",x===sw));
+    return;
+  }
+  if(e.target.closest("#btnFotos")){document.getElementById("nwFotos").click();return}
+  const delFoto=e.target.closest("[data-foto]");
+  if(delFoto){tempFotos.splice(+delFoto.dataset.foto,1);pintaThumbs();return}
+  if(e.target.id==="guardarReloj"){
+    const nombre = document.getElementById("nwNombre").value.trim();
+    if(!nombre){ document.getElementById("nwNombre").focus(); return }
+    const paid = +document.getElementById("nwPaid").value || 0;
+    const [fy,fm] = (document.getElementById("nwFecha").value || "2026-07").split("-").map(Number);
+    const compraFecha = new Date(fy, fm-1, 1);
+    const base = {
+      nombre,
+      ref:document.getElementById("nwRef").value.trim(),
+      material:document.getElementById("nwMaterial").value,
+      diametro:+document.getElementById("nwDiam").value || null,
+      dial:nuevoDial, bisel:nuevoBisel,
+      compra:paid, compraFecha,
+      source:document.getElementById("nwSource").value,
+      boxpapers:document.getElementById("nwBox").value,
+      condicion:document.getElementById("nwCond").value,
+      serial:document.getElementById("nwSerial").value.trim(),
+      notas:document.getElementById("nwNotas").value.trim(),
+      fotos:[...tempFotos],
+    };
+    if(editandoId){
+      const r = byId(editandoId);
+      const chk = document.getElementById("nwVendido");
+      let vendido = null;
+      if(chk && chk.checked){
+        const sp = +document.getElementById("nwSoldPrecio").value || 0;
+        const [sy,sm] = (document.getElementById("nwSoldFecha").value || "2026-07").split("-").map(Number);
+        vendido = {precio:sp, fecha:new Date(sy, sm-1, 1)};
+      }
+      Object.assign(r, base, {correa: r.correa, vendido});
+      if(!r.actual && r.compra) r.actual = r.compra; /* placeholder until first auto-fetch */
+      if(ONLINE()) rebuildHistRemote(r); else genHist(r);
+      apiTry({action:"updateWatch", watch:serializaReloj(r)});
+      cierraSheet(); pintaTodo();
+      toast(vendido ? "Saved · marked as sold" : "Changes saved");
+    } else {
+      const nuevoR = {
+        id:Date.now(), ...base,
+        correa:luminoso(nuevoDial)?"#C9CDCB":"#3a3f3d",
+        actual:paid, vendido:null,
+        hist: paid ? [{d:compraFecha, v:paid}] : [],
+      };
+      relojes.push(nuevoR);
+      apiTry({action:"addWatch", watch:serializaReloj(nuevoR)});
+      cierraSheet(); pintaTodo();
+      toast("Added: "+nombre);
+    }
+  }
+});
+
+/* ================= Remote data ================= */
+let valoresRemotos = {};
+function rebuildHistRemote(r){
+  const serie = (valoresRemotos[r.id]||[]).slice().sort((a,b)=>a.d-b.d);
+  if(r.compra) serie.unshift({d:r.compraFecha, v:r.compra});
+  r.hist = serie;
+  if(serie.length) r.actual = serie[serie.length-1].v;
+  else if(r.compra) r.actual = r.compra;
+}
+async function cargaRemota(){
+  const data = await apiGet({action:"bootstrap"});
+  valoresRemotos = {};
+  (data.values||[]).forEach(v=>{
+    (valoresRemotos[+v.watch_id] ??= []).push({d:new Date(v.date+"T00:00:00"), v:+v.value});
+  });
+  relojes.length = 0;
+  (data.watches||[]).forEach(w=>{
+    const r = {
+      id:+w.id, nombre:String(w.name||""), ref:String(w.ref||""), material:String(w.material||""),
+      diametro:+w.diameter_mm||null,
+      dial:w.dial_color||"#141414", bisel:w.bezel_color||"#2B2B2B", correa:w.strap_color||"#B7BCB9",
+      compra:+w.purchase_price||0,
+      compraFecha: w.purchase_date ? new Date(w.purchase_date+"T00:00:00") : new Date(HOY),
+      source:String(w.source||""), boxpapers:String(w.box_papers||""), condicion:String(w.condition||""),
+      serial:String(w.serial||""), notas:String(w.notes||""),
+      fotos: w.photos ? String(w.photos).split("|").filter(Boolean) : [],
+      vendido: w.sold_date ? {precio:+w.sold_price||0, fecha:new Date(w.sold_date+"T00:00:00")} : null,
+      actual:0, hist:[],
+    };
+    rebuildHistRemote(r);
+    relojes.push(r);
+  });
+  wears.length = 0;
+  (data.wears||[]).forEach(w=>{
+    const [y,m,d] = String(w.date).slice(0,10).split("-").map(Number);
+    wears.push({uid:String(w.id), date:new Date(y,m-1,d), watchId:+w.watch_id, cat:String(w.occasion||"Unspecified")});
+  });
+}
+
+/* ================= Init ================= */
+(function(){
+  const h = new Date().getHours();
+  document.getElementById("saludo").textContent =
+    (h<12?"Good morning":h<19?"Good afternoon":"Good evening") + ", Christian";
+})();
+async function init(){
+  pintaOjo(); pintaSegFecha(); pintaChipsCat();
+  if(ONLINE()){
+    try{ await cargaRemota(); toast("Synced with Google Sheet"); }
+    catch(e){ console.error(e); toast("Couldn't sync · showing local data"); }
+  }
+  pintaTodo();
+}
+init();
+if("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script>
+</body>
+</html>
