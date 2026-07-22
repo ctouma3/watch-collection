@@ -1,8 +1,5 @@
-/* My Watch Collection · service worker
-   App shell offline; los datos viven en el Sheet y se sincronizan al abrir. */
-const CACHE = "mwc-v1";
-const SHELL = ["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png"];
-
+const CACHE = "mwc-v2";
+const SHELL = ["./", "./index.html", "./manifest.json", "./icon-180.png", "./icon-192.png", "./icon-512.png"];
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
 });
@@ -14,7 +11,6 @@ self.addEventListener("activate", e => {
 });
 self.addEventListener("fetch", e => {
   const url = new URL(e.request.url);
-  // Nunca cachear el API ni las fotos de Drive: siempre red.
   if (url.hostname.includes("script.google.com") || url.hostname.includes("drive.google.com")) return;
   if (e.request.method !== "GET") return;
   e.respondWith(
