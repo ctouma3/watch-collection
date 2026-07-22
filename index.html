@@ -29,6 +29,7 @@
     --radio:18px;
   }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{background:var(--marfil)}
   html,body{height:100%}
   body{
     font-family:'Archivo',system-ui,sans-serif;
@@ -204,6 +205,15 @@
   .delta.pos{color:var(--sube)}
   .delta.neg{color:var(--baja)}
   .aviso-privacidad{display:flex;align-items:center;gap:8px;margin-top:14px;background:#fff;border:1px solid var(--linea);border-radius:14px;padding:11px 14px;font-size:12.5px;color:var(--gris)}
+  .col-tools{display:flex;gap:10px;margin-top:14px}
+  .buscar{flex:1;display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--linea);border-radius:12px;padding:0 12px;color:var(--gris-suave)}
+  .buscar input{border:none;outline:none;background:none;padding:11px 0;width:100%;font-size:14px;color:var(--tinta);-webkit-appearance:none}
+  .buscar input::placeholder{color:var(--gris-suave)}
+  .buscar:focus-within{border-color:var(--verde)}
+  .vista-toggle{display:flex;background:#EBE9E2;border-radius:12px;padding:3px;flex:none}
+  .vista-toggle button{width:38px;display:grid;place-items:center;border-radius:9px;color:var(--gris)}
+  .vista-toggle button.sel{background:#fff;color:var(--tinta);box-shadow:0 1px 3px rgba(23,33,28,.12)}
+  .grid.modo-lista{display:block}
 
   /* ================= Bottom nav ================= */
   .navbar{
@@ -387,13 +397,28 @@
     <h1 class="titulo">Your pieces</h1>
 
     <div class="card portfolio">
-      <div class="eyebrow">Market value · auto-updated daily</div>
+      <div class="eyebrow">Collection value · what you paid</div>
       <div class="num" id="valorTotal"></div>
       <div class="meta" id="valorMeta"></div>
     </div>
     <div class="aviso-privacidad" id="avisoPrivacidad">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
       Values are hidden. Tap the eye icon to reveal.
+    </div>
+
+    <div class="col-tools">
+      <label class="buscar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="colBuscar" type="search" placeholder="Search watches" autocomplete="off">
+      </label>
+      <div class="vista-toggle">
+        <button id="vGrid" class="sel" aria-label="Grid view">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>
+        </button>
+        <button id="vLista" aria-label="List view">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6h11M9 12h11M9 18h11M4 6h.5M4 12h.5M4 18h.5"/></svg>
+        </button>
+      </div>
     </div>
 
     <div class="grid" id="gridColeccion"></div>
@@ -840,37 +865,58 @@ function pintaHistorial(){
 }
 
 /* ================= COLLECTION ================= */
+let filtroBusqueda = "";
+let vistaCol = localStorage.getItem("mwc_view") || "grid";
+
 function pintaColeccion(){
   const act = activos();
-  const valorados = act.filter(r=>r.actual>0);
-  const total=valorados.reduce((s,r)=>s+r.actual,0);
-  const compra=valorados.reduce((s,r)=>s+r.compra,0);
-  const d=compra?(total-compra)/compra*100:0;
+  const priced = act.filter(r=>r.compra>0);
+  const total = priced.reduce((s,r)=>s+r.compra,0);
   const num=document.getElementById("valorTotal");
   num.textContent=dinero(total);
   num.classList.toggle("oculto",privado);
   document.getElementById("valorMeta").innerHTML = privado
-    ? `<span>${act.length} pieces</span><span>${valorados.length} priced</span><span>Tap the eye to reveal</span>`
-    : `<span>${act.length} pieces · ${valorados.length} priced</span><span>Paid ${fmt(compra)}</span><b>${d>=0?"▲ +":"▼ "}${d.toFixed(1)}%</b>`;
+    ? `<span>${act.length} pieces</span><span>${priced.length} priced</span><span>Tap the eye to reveal</span>`
+    : `<span>${act.length} pieces</span><span>${priced.length} priced</span>`;
 
-  const vendidos = relojes.filter(r=>r.vendido);
-  const grid = act
-    .slice().sort((a,b)=>b.actual-a.actual || wears.filter(w=>w.watchId===b.id).length - wears.filter(w=>w.watchId===a.id).length)
-    .map(r=>{
-      const dd=r.compra&&r.actual?(r.actual-r.compra)/r.compra*100:0, pos=dd>=0;
-      return `<button class="card wcard" onclick="abreDetalle(${r.id})">
+  const q = filtroBusqueda.trim().toLowerCase();
+  const match = r => !q || r.nombre.toLowerCase().includes(q) || String(r.ref||"").toLowerCase().includes(q);
+  const nWears = id => wears.filter(w=>w.watchId===id).length;
+  const lista = act.filter(match).slice()
+    .sort((a,b)=> (b.compra-a.compra) || (nWears(b.id)-nWears(a.id)));
+  const vendidos = relojes.filter(r=>r.vendido && match(r));
+
+  const grid = document.getElementById("gridColeccion");
+  grid.classList.toggle("modo-lista", vistaCol==="lista");
+
+  const chev = `<svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>`;
+
+  if(!lista.length){
+    grid.innerHTML = `<div class="card vacio" style="grid-column:1/-1"><strong>No watches found</strong>Try another search.</div>`;
+  } else if(vistaCol==="lista"){
+    grid.innerHTML = `<div class="card">` + lista.map(r=>`
+      <button class="fila" style="width:100%" onclick="abreDetalle(${r.id})">
+        ${miniatura(r,44)}
+        <div class="fila-info">
+          <div class="nombre">${esc(r.nombre)}</div>
+          <div class="meta">${r.compra?dinero(r.compra):`<span class="add-hint">Add price info →</span>`}${r.compra&&r.diametro?" · "+r.diametro+" mm":""}</div>
+        </div>
+        ${chev}
+      </button>`).join("") + `</div>`;
+  } else {
+    grid.innerHTML = lista.map(r=>`
+      <button class="card wcard" onclick="abreDetalle(${r.id})">
         ${r.fotos.length
           ? `<span class="dial" style="width:100%;aspect-ratio:4/3;padding:0"><img src="${r.fotos[0]}" alt=""></span>`
           : `<span class="dial">${dialSVG(r,54)}</span>`}
         <span class="nombre">${esc(r.nombre)}</span>
         <span>
-          ${r.actual
-            ? `<span class="valor">${dinero(r.actual)}</span>
-               <div class="sub delta ${pos?"pos":"neg"}">${privado?"":(pos?"+":"")+dd.toFixed(1)+"%"}</div>`
+          ${r.compra
+            ? `<span class="valor">${dinero(r.compra)}</span>`
             : `<span class="add-hint">Add price info →</span>`}
         </span>
-      </button>`;
-    }).join("");
+      </button>`).join("");
+  }
 
   const soldHtml = vendidos.length ? `
     <div class="fila-titulo" style="margin-top:26px"><span class="sub-titulo">Sold</span></div>
@@ -882,20 +928,35 @@ function pintaColeccion(){
           <div class="nombre">${esc(r.nombre)}</div>
           <div class="meta">Sold ${mesCorto(r.vendido.fecha)}${r.vendido.precio?` · ${dinero(r.vendido.precio)}`:""}</div>
         </div>
-        ${gan!==null && !privado ? `<span class="pct ${gan>=0?"":"delta neg"}" style="${gan<0?"color:var(--baja)":""}">${gan>=0?"+":"−"}${fmt(Math.abs(gan))}</span>`:""}
+        ${gan!==null && !privado ? `<span class="pct" style="${gan<0?"color:var(--baja)":""}">${gan>=0?"+":"−"}${fmt(Math.abs(gan))}</span>`:""}
       </button>`;
     }).join("")}</div>` : "";
 
-  document.getElementById("gridColeccion").innerHTML = grid;
-  document.getElementById("gridColeccion").insertAdjacentHTML("afterend","");
   let soldCont = document.getElementById("soldSeccion");
   if(!soldCont){
     soldCont = document.createElement("div");
     soldCont.id = "soldSeccion";
-    document.getElementById("gridColeccion").after(soldCont);
+    grid.after(soldCont);
   }
   soldCont.innerHTML = soldHtml;
 }
+
+/* Búsqueda y toggle de vista */
+document.getElementById("colBuscar").addEventListener("input", e=>{
+  filtroBusqueda = e.target.value;
+  pintaColeccion();
+});
+function setVista(v){
+  vistaCol = v;
+  localStorage.setItem("mwc_view", v);
+  document.getElementById("vGrid").classList.toggle("sel", v==="grid");
+  document.getElementById("vLista").classList.toggle("sel", v==="lista");
+  pintaColeccion();
+}
+document.getElementById("vGrid").addEventListener("click", ()=>setVista("grid"));
+document.getElementById("vLista").addEventListener("click", ()=>setVista("lista"));
+document.getElementById("vGrid").classList.toggle("sel", vistaCol==="grid");
+document.getElementById("vLista").classList.toggle("sel", vistaCol==="lista");
 
 /* ================= Nav ================= */
 function irA(scr){
@@ -1144,7 +1205,7 @@ window.abreFormReloj = function(editId){
       <div class="p" style="margin-top:8px">Sold watches move to the Sold section and stop appearing in the wear log picker.</div>
     </div>` : ""}
 
-    <div class="p" style="margin:14px 2px 12px">Market value is fetched automatically from the reference number — no manual entry needed.</div>
+    <div style="height:14px"></div>
     <button class="sheet-confirm" id="guardarReloj">${r?"Save changes":"Add to collection"}</button>`;
   pintaThumbs();
   abreSheet();
@@ -1249,7 +1310,7 @@ sc.addEventListener("click",e=>{
         vendido = {precio:sp, fecha:new Date(sy, sm-1, 1)};
       }
       Object.assign(r, base, {correa: r.correa, vendido});
-      if(!r.actual && r.compra) r.actual = r.compra; /* placeholder until first auto-fetch */
+      r.actual = r.compra;
       
       apiTry({action:"updateWatch", watch:serializaReloj(r)});
       cierraSheet(); pintaTodo();
@@ -1286,7 +1347,7 @@ async function cargaRemota(){
       serial:String(w.serial||""), notas:String(w.notes||""),
       fotos: w.photos ? String(w.photos).split("|").filter(Boolean) : [],
       vendido: w.sold_date ? {precio:+w.sold_price||0, fecha:new Date(w.sold_date+"T00:00:00")} : null,
-      actual:0, hist:[],
+      actual:+w.purchase_price||0, hist:[],
     };
     
     relojes.push(r);
