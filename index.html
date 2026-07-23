@@ -487,17 +487,16 @@ const HOY = new Date(); HOY.setHours(0,0,0,0);
    Pega aquí la URL /exec de tu Web App de Apps Script y el TOKEN
    que definiste en Code.gs. Con ambos vacíos, la app corre en modo
    demo con los datos embebidos (tu export de Wristory). */
-/* La URL del API y el TOKEN NO viven en este archivo (que es público).
-   Se piden una vez al abrir la app y quedan guardados solo en tu dispositivo. */
+/* La URL del backend va fija (sin el código secreto no sirve de nada).
+   El código secreto se pide una vez y queda guardado SOLO en este dispositivo. */
+const API_URL_FIJA = "https://script.google.com/macros/s/AKfycbwj7tqSoQe_SqCo3H04w0hDuaFDouBmThlNbxdhKUR9jxcMVCqsViFy4AzB3vLfV_bP/exec";
 const CONFIG = {
-  API_URL: localStorage.getItem("mwc_api") || "",
+  API_URL: API_URL_FIJA,
   TOKEN: localStorage.getItem("mwc_token") || "",
 };
-const ONLINE = () => !!(CONFIG.API_URL && CONFIG.TOKEN);
-function guardaConfig(api, token){
-  CONFIG.API_URL = api.trim();
+const ONLINE = () => !!CONFIG.TOKEN;
+function guardaConfig(token){
   CONFIG.TOKEN = token.trim();
-  localStorage.setItem("mwc_api", CONFIG.API_URL);
   localStorage.setItem("mwc_token", CONFIG.TOKEN);
 }
 const isoLocal = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
@@ -1334,14 +1333,13 @@ sc.addEventListener("change",e=>{
 });
 sc.addEventListener("click",e=>{
   if(e.target.id==="cfgGuardar"){
-    const api = document.getElementById("cfgApi").value;
     const tok = document.getElementById("cfgToken").value;
-    if(!api.trim() || !tok.trim()){ toast("Both fields are required"); return; }
-    guardaConfig(api, tok);
+    if(!tok.trim()){ toast("Enter your code"); return; }
+    guardaConfig(tok);
     cierraSheet();
     toast("Connecting…");
     cargaRemota().then(()=>{ pintaTodo(); toast("Synced with Google Sheet"); })
-      .catch(err=>{ toast("Couldn't connect: "+err.message); abreSetup(); });
+      .catch(err=>{ toast("Wrong code or no connection"); abreSetup(); });
     return;
   }
   if(e.target.id==="cfgDemo"){ cierraSheet(); return; }
@@ -1468,12 +1466,10 @@ async function cargaRemota(){
 window.abreSetup = function(){
   diaAbierto = null;
   document.getElementById("sheetContenido").innerHTML = `
-    <h2>Connect your Google Sheet</h2>
-    <div class="p">One-time setup. These are saved only on this device — never in the published site. · App v2.1</div>
-    <label class="lblf" for="cfgApi">Web App URL (ends in /exec)</label>
-    <input class="inp" id="cfgApi" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off" value="${esc(CONFIG.API_URL)}">
-    <label class="lblf" for="cfgToken">Secret token</label>
-    <input class="inp" id="cfgToken" placeholder="Your secret key" autocomplete="off" value="${esc(CONFIG.TOKEN)}">
+    <h2>Enter your code</h2>
+    <div class="p">Your secret code is saved only on this device. · App v2.2</div>
+    <label class="lblf" for="cfgToken">Secret code</label>
+    <input class="inp" id="cfgToken" placeholder="Your secret code" autocomplete="off" value="${esc(CONFIG.TOKEN)}">
     <div style="height:14px"></div>
     <button class="sheet-confirm" id="cfgGuardar">Connect</button>
     <div style="height:8px"></div>
