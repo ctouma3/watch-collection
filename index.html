@@ -253,6 +253,9 @@
   .cat-btn.sel{background:var(--verde);border-color:var(--verde);color:#fff}
   .sheet-confirm{width:100%;padding:15px;border-radius:14px;background:var(--verde);color:#fff;font-weight:700;font-size:15px;text-align:center}
   .sheet-confirm:disabled{opacity:.35}
+  .sheet-confirm.peligro{background:var(--baja)}
+  .btn-borrar{display:block;width:100%;text-align:center;padding:13px;margin-top:10px;font-size:13.5px;font-weight:700;color:var(--baja);border:1px solid #EAD5CF;border-radius:14px;background:#fff}
+  .btn-borrar:active{background:#F9F0EE}
   .sheet-back{font-size:13px;font-weight:600;color:var(--gris);margin-bottom:10px;display:block}
   .form-seccion{font-size:15px;font-weight:800;letter-spacing:-.01em;margin:20px 2px 2px}
   .lblf{font-size:12px;font-weight:700;color:var(--gris);margin:12px 2px 6px;display:block;letter-spacing:.03em}
@@ -606,7 +609,7 @@ function ultimaVez(id){
   const w=[...wears].filter(x=>x.watchId===id).sort((a,b)=>b.date-a.date)[0];
   if(!w) return "—";
   if(mismoDia(w.date,HOY)) return "Today";
-  return w.date.toLocaleDateString("en-US",{month:"short",day:"numeric"});
+  return w.date.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
 }
 function topOcasion(id){
   const c={};
@@ -1256,7 +1259,8 @@ window.abreFormReloj = function(editId){
     </div>` : ""}
 
     <div style="height:14px"></div>
-    <button class="sheet-confirm" id="guardarReloj">${r?"Save changes":"Add to collection"}</button>`;
+    <button class="sheet-confirm" id="guardarReloj">${r?"Save changes":"Add to collection"}</button>
+    ${r?`<button class="btn-borrar" id="borrarReloj">Delete this watch…</button>`:""}`;
   pintaThumbs();
   abreSheet();
 };
@@ -1367,7 +1371,42 @@ sc.addEventListener("click",e=>{
   const delFoto=e.target.closest("[data-foto]");
   if(delFoto){tempFotos.splice(+delFoto.dataset.foto,1);pintaThumbs();return}
   if(e.target.id==="guardarReloj"){ guardaRelojDesdeForm(e.target); return; }
+  if(e.target.id==="borrarReloj" && editandoId){ pintaConfirmaBorrado(editandoId); return; }
+  if(e.target.id==="cancelaBorrado" && editandoId){ abreFormReloj(editandoId); return; }
+  if(e.target.id==="confirmaBorrado" && editandoId){ borraRelojDefinitivo(editandoId); return; }
 });
+
+function pintaConfirmaBorrado(id){
+  const r = byId(id);
+  const n = wears.filter(w=>w.watchId===id).length;
+  document.getElementById("sheetContenido").innerHTML = `
+    <h2>Delete this watch?</h2>
+    <div class="p">This can't be undone.</div>
+    <div class="sheet-item" style="cursor:default">
+      ${miniatura(r,44)}
+      <div class="fila-info">
+        <div class="nombre">${esc(r.nombre)}</div>
+        <div class="meta">${n} wear${n===1?"":"s"} logged${r.fotos.length?` · ${r.fotos.length} photo${r.fotos.length===1?"":"s"}`:""}</div>
+      </div>
+    </div>
+    <div class="p" style="margin-top:10px">The watch and its <b>entire wear history</b> (${n} entr${n===1?"y":"ies"}) will be permanently deleted from your collection and your Google Sheet.</div>
+    <button class="sheet-confirm peligro" id="confirmaBorrado">Yes, delete forever</button>
+    <div style="height:8px"></div>
+    <button class="sheet-back" id="cancelaBorrado" style="text-align:center;width:100%">Cancel</button>`;
+  sheet.scrollTop = 0;
+}
+
+function borraRelojDefinitivo(id){
+  const r = byId(id);
+  if(!r) return;
+  apiTry({action:"deleteWatch", id:r.id});
+  for(let i=wears.length-1;i>=0;i--) if(wears[i].watchId===id) wears.splice(i,1);
+  const idx = relojes.findIndex(x=>x.id===id);
+  if(idx>=0) relojes.splice(idx,1);
+  editandoId = null;
+  cierraSheet(); pintaTodo();
+  toast("Deleted: "+r.nombre.split(" ").slice(0,3).join(" "));
+}
 
 async function guardaRelojDesdeForm(btn){
   const nombre = document.getElementById("nwNombre").value.trim();
@@ -1467,7 +1506,7 @@ window.abreSetup = function(){
   diaAbierto = null;
   document.getElementById("sheetContenido").innerHTML = `
     <h2>Enter your code</h2>
-    <div class="p">Your secret code is saved only on this device. · App v2.2</div>
+    <div class="p">Your secret code is saved only on this device. · App v2.3</div>
     <label class="lblf" for="cfgToken">Secret code</label>
     <input class="inp" id="cfgToken" placeholder="Your secret code" autocomplete="off" value="${esc(CONFIG.TOKEN)}">
     <div style="height:14px"></div>
