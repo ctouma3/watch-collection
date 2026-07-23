@@ -308,6 +308,19 @@
   .det-row .k{color:var(--gris);font-weight:600;flex:none}
   .det-row .v{font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
 
+  /* ================= Photo viewer (fullscreen) ================= */
+  .visor{position:fixed;inset:0;background:rgba(8,13,10,.97);z-index:70;display:none;flex-direction:column}
+  .visor.abierto{display:flex;animation:fade .15s ease}
+  .visor-top{display:flex;justify-content:flex-end;padding:calc(env(safe-area-inset-top,10px) + 10px) 16px 6px}
+  .visor-cerrar{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;display:grid;place-items:center}
+  .visor-carrusel{flex:1;display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none}
+  .visor-carrusel::-webkit-scrollbar{display:none}
+  .visor-slide{flex:0 0 100%;scroll-snap-align:center;display:flex;align-items:center;justify-content:center;padding:10px 14px}
+  .visor-slide img{max-width:100%;max-height:100%;object-fit:contain;border-radius:8px}
+  .visor-dots{display:flex;gap:6px;justify-content:center;padding:14px 0 calc(env(safe-area-inset-bottom,12px) + 16px)}
+  .visor-dots i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.3);transition:background .15s}
+  .visor-dots i.on{background:var(--oro)}
+
   /* Toast */
   .toast{
     position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,12px) + 84px);
@@ -452,6 +465,16 @@
     </button>
   </div>
   <div id="sheetContenido"></div>
+</div>
+
+<div class="visor" id="visor" role="dialog" aria-label="Photo viewer">
+  <div class="visor-top">
+    <button class="visor-cerrar" aria-label="Close photo viewer" onclick="cierraVisor()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <div class="visor-carrusel" id="visorCarrusel"></div>
+  <div class="visor-dots" id="visorDots"></div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -1022,6 +1045,31 @@ function pintaDiaSheet(){
 
 /* ================= Value development chart ================= */
 
+/* ================= Photo viewer ================= */
+window.abreVisor = function(watchId, idx){
+  const r = byId(watchId);
+  if(!r || !r.fotos.length) return;
+  const car = document.getElementById("visorCarrusel");
+  const dots = document.getElementById("visorDots");
+  car.innerHTML = r.fotos.map(f=>
+    `<div class="visor-slide"><img src="${f}" alt="${esc(r.nombre)}"></div>`).join("");
+  dots.innerHTML = r.fotos.length>1
+    ? r.fotos.map((_,i)=>`<i class="${i===idx?"on":""}"></i>`).join("") : "";
+  document.getElementById("visor").classList.add("abierto");
+  requestAnimationFrame(()=>{ car.scrollLeft = idx * car.clientWidth; });
+  car.onscroll = ()=>{
+    const i = Math.round(car.scrollLeft / car.clientWidth);
+    dots.querySelectorAll("i").forEach((d,j)=>d.classList.toggle("on",j===i));
+  };
+};
+window.cierraVisor = function(){
+  document.getElementById("visor").classList.remove("abierto");
+};
+/* Tocar el fondo oscuro (fuera de la foto) también cierra */
+document.getElementById("visorCarrusel").addEventListener("click", e=>{
+  if(e.target.classList.contains("visor-slide")) cierraVisor();
+});
+
 /* ================= Detail sheet ================= */
 window.abreDetalle = function(id){
   diaAbierto = null;
@@ -1033,7 +1081,7 @@ window.abreDetalle = function(id){
   const dd = (gan!==null && r.compra) ? gan/r.compra*100 : 0;
   const pos = (gan??0)>=0;
   const slides = r.fotos.length
-    ? r.fotos.map(f=>`<div class="slide"><img src="${f}" alt="${esc(r.nombre)}"></div>`).join("")
+    ? r.fotos.map((f,i)=>`<div class="slide"><img src="${f}" alt="${esc(r.nombre)}" style="cursor:zoom-in" onclick="abreVisor(${r.id},${i})"></div>`).join("")
     : `<div class="slide">${dialSVG(r,150)}</div>`;
   const nSlides = Math.max(r.fotos.length,1);
   document.getElementById("sheetContenido").innerHTML=`
