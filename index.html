@@ -1469,7 +1469,7 @@ window.abreSetup = function(){
   diaAbierto = null;
   document.getElementById("sheetContenido").innerHTML = `
     <h2>Connect your Google Sheet</h2>
-    <div class="p">One-time setup. These are saved only on this device — never in the published site.</div>
+    <div class="p">One-time setup. These are saved only on this device — never in the published site. · App v2.1</div>
     <label class="lblf" for="cfgApi">Web App URL (ends in /exec)</label>
     <input class="inp" id="cfgApi" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off" value="${esc(CONFIG.API_URL)}">
     <label class="lblf" for="cfgToken">Secret token</label>
@@ -1497,7 +1497,15 @@ async function init(){
   if(!ONLINE()) abreSetup();
 }
 init();
-if("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(()=>{});
+if("serviceWorker" in navigator){
+  navigator.serviceWorker.register("sw.js").then(reg=>{ reg.update(); }).catch(()=>{});
+  let yaRecargado = false;
+  navigator.serviceWorker.addEventListener("controllerchange", ()=>{
+    if(yaRecargado) return;
+    yaRecargado = true;
+    location.reload(); // versión nueva instalada → refrescar una vez, automáticamente
+  });
+}
 </script>
 </body>
 </html>
