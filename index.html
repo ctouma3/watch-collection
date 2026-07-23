@@ -274,6 +274,9 @@
   .foto-thumb{position:relative;width:64px;height:64px;border-radius:10px;overflow:hidden;border:1px solid var(--linea)}
   .foto-thumb img{width:100%;height:100%;object-fit:cover}
   .foto-thumb button{position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:50%;background:rgba(15,25,20,.6);color:#fff;display:grid;place-items:center}
+  .foto-thumb.subiendo img{opacity:.4}
+  .foto-thumb.subiendo::after{content:"";position:absolute;left:50%;top:50%;width:16px;height:16px;margin:-8px 0 0 -8px;border:2.5px solid var(--verde);border-top-color:transparent;border-radius:50%;animation:girar .8s linear infinite}
+  @keyframes girar{to{transform:rotate(360deg)}}
 
   /* ================= Detail: carousel ================= */
   .carrusel{
@@ -1214,29 +1217,66 @@ function pintaThumbs(){
   const el = document.getElementById("fotoThumbs");
   if(!el) return;
   el.innerHTML = tempFotos.map((f,i)=>
-    `<span class="foto-thumb"><img src="${f}" alt=""><button data-foto="${i}" aria-label="Remove photo">
+    `<span class="foto-thumb${uploadsPendientes.has(f)?" subiendo":""}"><img src="${f}" alt=""><button data-foto="${i}" aria-label="Remove photo">
       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
     </button></span>`).join("");
+}
+
+/* Fotos: compresión antes de subir + registro de subidas en curso */
+const uploadsPendientes = new Map(); // dataURL -> Promise<url|null>
+
+async function reduceFoto(file){
+  const dataURL = await new Promise((res,rej)=>{
+    const rd=new FileReader();
+    rd.onload=()=>res(rd.result);
+    rd.onerror=()=>rej(new Error("read failed"));
+    rd.readAsDataURL(file);
+  });
+  const img = await new Promise((res,rej)=>{
+    const im=new Image();
+    im.onload=()=>res(im);
+    im.onerror=()=>rej(new Error("decode failed"));
+    im.src=dataURL;
+  });
+  const MAX=1600;
+  let w=img.naturalWidth, h=img.naturalHeight;
+  if(Math.max(w,h)>MAX){ const k=MAX/Math.max(w,h); w=Math.round(w*k); h=Math.round(h*k); }
+  const c=document.createElement("canvas"); c.width=w; c.height=h;
+  c.getContext("2d").drawImage(img,0,0,w,h);
+  return c.toDataURL("image/jpeg",.85);
+}
+
+function subeFoto(dataURL){
+  const p = apiPost({action:"uploadPhoto", data:dataURL})
+    .then(res=>{
+      const i = tempFotos.indexOf(dataURL);
+      if(i>=0){ tempFotos[i] = res.url; }
+      uploadsPendientes.delete(dataURL);
+      pintaThumbs();
+      return res.url;
+    })
+    .catch(err=>{
+      uploadsPendientes.delete(dataURL);
+      pintaThumbs();
+      toast("Photo upload error: "+err.message);
+      return null;
+    });
+  uploadsPendientes.set(dataURL, p);
+  pintaThumbs();
+  return p;
 }
 
 /* ================= Sheet event delegation ================= */
 const sc = document.getElementById("sheetContenido");
 sc.addEventListener("change",e=>{
   if(e.target.id==="nwFotos"){
-    [...e.target.files].forEach(f=>{
-      const rd = new FileReader();
-      rd.onload = ()=>{
-        const dataURL = rd.result;
+    [...e.target.files].forEach(async f=>{
+      try{
+        const dataURL = await reduceFoto(f);
         tempFotos.push(dataURL);
         pintaThumbs();
-        if(ONLINE()){
-          apiPost({action:"uploadPhoto", data:dataURL}).then(res=>{
-            const i = tempFotos.indexOf(dataURL);
-            if(i>=0){ tempFotos[i] = res.url; pintaThumbs(); }
-          }).catch(err=>toast("Photo upload error: "+err.message));
-        }
-      };
-      rd.readAsDataURL(f);
+        if(ONLINE()) subeFoto(dataURL);
+      }catch(err){ toast("Couldn't read that photo"); }
     });
     e.target.value="";
   }
@@ -1280,9 +1320,24 @@ sc.addEventListener("click",e=>{
   if(e.target.closest("#btnFotos")){document.getElementById("nwFotos").click();return}
   const delFoto=e.target.closest("[data-foto]");
   if(delFoto){tempFotos.splice(+delFoto.dataset.foto,1);pintaThumbs();return}
-  if(e.target.id==="guardarReloj"){
-    const nombre = document.getElementById("nwNombre").value.trim();
-    if(!nombre){ document.getElementById("nwNombre").focus(); return }
+  if(e.target.id==="guardarReloj"){ guardaRelojDesdeForm(e.target); return; }
+});
+
+async function guardaRelojDesdeForm(btn){
+  const nombre = document.getElementById("nwNombre").value.trim();
+  if(!nombre){ document.getElementById("nwNombre").focus(); return }
+  btn.disabled = true;
+  try{
+    /* Fotos aún subiendo a Drive: esperar antes de guardar para no perderlas */
+    if(ONLINE()){
+      const pendientes = tempFotos.filter(f=>f.startsWith("data:"));
+      if(pendientes.length){
+        toast("Uploading photo"+(pendientes.length>1?"s":"")+"…");
+        await Promise.all(pendientes.map(f=>uploadsPendientes.get(f) || subeFoto(f)));
+      }
+      const fallidas = tempFotos.filter(f=>f.startsWith("data:")).length;
+      if(fallidas) toast(fallidas+" photo(s) failed to upload and won't be saved");
+    }
     const paid = +document.getElementById("nwPaid").value || 0;
     const [fy,fm] = (document.getElementById("nwFecha").value || "2026-07").split("-").map(Number);
     const compraFecha = new Date(fy, fm-1, 1);
@@ -1327,8 +1382,10 @@ sc.addEventListener("click",e=>{
       cierraSheet(); pintaTodo();
       toast("Added: "+nombre);
     }
+  } finally {
+    btn.disabled = false;
   }
-});
+}
 
 /* ================= Remote data ================= */
 
